@@ -8,8 +8,8 @@ A production-ready, enterprise-grade task management web application built with 
 
 - [Overview & Architecture](#-overview--architecture)
 - [Tech Stack](#-tech-stack)
-- [Workflows & Development Lifecycle](#-workflows--development-lifecycle)
-- [Quick Start Guide](#-quick-start-guide)
+- [Development Environment Setup & Run Guide](#-development-environment-setup--run-guide)
+- [Production Deployment & Build Guide](#-production-deployment--build-guide)
 - [Demo Accounts](#-demo-accounts)
 - [RESTful API v1 Specification & Response Schemas](#-restful-api-v1-specification--response-schemas)
 - [Database & Query Performance Optimization](#-database--query-performance-optimization)
@@ -95,28 +95,189 @@ The repository includes a comprehensive, cross-platform [`Makefile`](file:///c:/
 
 ---
 
-## 🚀 Quick Start Guide
+## 💻 Development Environment Setup & Run Guide
 
 ### Prerequisites
-- **PHP** >= 8.3 (with `pdo_sqlite`, `openssl`, `mbstring`)
+- **PHP** >= 8.3 (with `pdo_sqlite`, `openssl`, `mbstring`, `fileinfo`)
 - **Composer** >= 2.x
 - **Node.js** >= 18.x and **npm** >= 9.x
 
-### 1. One-Step Automated Setup
+---
 
-From the repository root:
+### Step 1: Initial Setup (Dependencies + Database)
+
+#### Cách 1: Tự động 1 bước qua Makefile (Khuyến nghị)
 ```bash
 make setup
 ```
+Lệnh này sẽ tự động:
+1. Cài đặt các gói PHP (`composer install` trong `backend/`)
+2. Cài đặt các gói Node (`npm install` trong `frontend/`)
+3. Tạo file `backend/.env` từ `.env.example` và generate application key
+4. Chạy migration tạo bảng SQLite kèm composite performance indexes và nạp dữ liệu mẫu (Seeder: 3 users, 12 tasks)
 
-### 2. Start Development Servers
+#### Cách 2: Thiết lập thủ công từng phần
+```bash
+# 1. Cài đặt Backend
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate:fresh --seed
+cd ..
 
+# 2. Cài đặt Frontend
+cd frontend
+npm install
+cd ..
+```
+
+---
+
+### Step 2: Khởi chạy môi trường Development
+
+Có 3 lựa chọn để khởi chạy môi trường dev tùy theo thói quen và môi trường máy của bạn:
+
+#### Lựa chọn A: Chạy đồng thời 2 service trong 1 Terminal duy nhất (Tiện lợi nhất)
 ```bash
 make dev
+# hoặc chạy qua npm:
+npm run dev
 ```
-- **Backend API:** `http://localhost:8000` (or `http://tasks-challenge.test` via Laragon)
-- **Frontend SPA:** `http://localhost:5173`
-- **Swagger UI Documentation:** `http://localhost:8000/docs`
+Hệ thống sẽ chạy song song:
+- **Backend API:** `http://localhost:8000` (hiển thị tag `[BACKEND]` màu xanh dương)
+- **Frontend SPA:** `http://localhost:5173` (hiển thị tag `[FRONTEND]` màu xanh lá)
+- Nhấn `Ctrl + C` để dừng đồng thời cả 2 service an toàn.
+
+#### Lựa chọn B: Mở 2 Tab Terminal độc lập
+- **Terminal 1 (Backend API):**
+  ```bash
+  cd backend
+  php artisan serve --host=127.0.0.1 --port=8000
+  ```
+  *(Truy cập Swagger Docs tại: `http://localhost:8000/docs`)*
+
+- **Terminal 2 (Frontend SPA):**
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+  *(Truy cập ứng dụng tại: `http://localhost:5173`)*
+
+#### Lựa chọn C: Chạy qua Virtual Host của Laragon
+Nếu bạn sử dụng Laragon với Apache/Nginx:
+1. Laragon tự động ánh xạ host ảo: `http://tasks-challenge.test` trỏ vào `backend/public`.
+2. Tạo file `frontend/.env` (nếu chưa có):
+   ```env
+   VITE_API_URL=http://tasks-challenge.test/api/v1
+   ```
+3. Chạy frontend dev server:
+   ```bash
+   cd frontend && npm run dev
+   ```
+
+---
+
+## 🚀 Production Deployment & Build Guide
+
+### Step 1: Build Production Frontend SPA
+Frontend được đóng gói thành các file tĩnh HTML/CSS/JS được tối ưu hóa tối đa, bẻ nhỏ chunk và bật tree-shaking:
+
+```bash
+# Cách 1: Dùng Makefile
+make build-frontend
+
+# Cách 2: Chạy trực tiếp qua NPM
+cd frontend
+npm run build
+```
+Toàn bộ mã nguồn đã build sẽ nằm tại thư mục: **`frontend/dist/`** (chỉ ~321 kB bundle chính).
+
+Để xem trước (preview) bản build production trên cổng 4173:
+```bash
+make preview
+# hoặc: cd frontend && npm run preview
+```
+
+---
+
+### Step 2: Tối ưu hóa Backend Laravel cho Production
+
+Khi deploy lên môi trường Production thực tế (Server Linux/Ubuntu, Docker, hoặc Cloud VPS):
+
+```bash
+cd backend
+
+# 1. Cài đặt Composer không kèm dev dependencies & tối ưu autoload
+composer install --no-dev --optimize-autoloader
+
+# 2. Cấu hình .env Production
+# Đổi APP_ENV=production, APP_DEBUG=false, và cấu hình MySQL / PostgreSQL nếu dùng
+# Đảm bảo cấu hình CORS: FRONTEND_URL=https://your-frontend-domain.com
+
+# 3. Chạy migration sản xuất
+php artisan migrate --force
+
+# 4. Cache toàn bộ cấu hình, routes, và events để đạt hiệu năng tối đa
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+```
+
+*(Hoặc dùng lệnh ngắn gọn từ root: `make build-backend`)*.
+
+---
+
+### Step 3: Cấu hình Web Server Phục vụ Production (Nginx)
+
+Dưới đây là file cấu hình mẫu chuẩn `nginx.conf` phục vụ cả Frontend SPA (Static Files) và Backend Laravel API trên cùng 1 domain:
+
+```nginx
+server {
+    listen 80;
+    server_name tasks.yourdomain.com;
+    root /var/www/tasks-challenge/frontend/dist;
+    index index.html;
+
+    # Gzip Compression tối ưu tốc độ tải
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # 1. Frontend SPA: chuyển hướng tất cả route về index.html để Vue Router xử lý
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 2. Backend API: chuyển tiếp các request /api sang Laravel backend/public
+    location ^~ /api {
+        root /var/www/tasks-challenge/backend/public;
+        try_files $uri $uri/ /index.php?$query_string;
+
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME /var/www/tasks-challenge/backend/public/index.php;
+        }
+    }
+
+    # 3. Swagger Docs UI
+    location ^~ /docs {
+        root /var/www/tasks-challenge/backend/public;
+        try_files $uri $uri/ /index.php?$query_string;
+
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME /var/www/tasks-challenge/backend/public/index.php;
+        }
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+```
 
 ---
 
