@@ -1,0 +1,434 @@
+# Task List: Team Task Manager
+
+## Phase 1: Project Scaffolding & Foundation
+
+## Task 1: Initialize Git repo and scaffold Laravel 11 backend
+
+**Description:** Initialize a git repository, create a Laravel 11 project in `backend/`, configure SQLite database, install Sanctum, and set up CORS for the Vue SPA dev server.
+
+**Acceptance criteria:**
+- [ ] Git repo initialized with `.gitignore`
+- [ ] Laravel 11 installed in `backend/` with SQLite configured in `.env`
+- [ ] Sanctum installed and configured
+- [ ] CORS configured to allow `http://localhost:5173`
+- [ ] `php artisan serve` starts without errors
+
+**Verification:**
+- [ ] `php artisan serve` runs and returns Laravel welcome at `http://localhost:8000`
+- [ ] `php artisan sanctum:prune-expired` runs without error (Sanctum installed)
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `backend/.env`, `backend/.env.example`
+- `backend/config/cors.php`
+- `backend/config/sanctum.php`
+- `backend/app/Models/User.php` (HasApiTokens trait)
+
+**Estimated scope:** Medium (3-5 files)
+
+---
+
+## Task 2: Create database schema (migrations + models)
+
+**Description:** Create migrations for `users` (add `role` column) and `tasks` tables. Update the User model with `role` enum cast and `tasks()` relationship. Create the Task model with `status` enum cast, `SoftDeletes`, and `user()` relationship.
+
+**Acceptance criteria:**
+- [ ] `users` table has `role` column (string, default 'user')
+- [ ] `tasks` table has `title`, `description`, `status`, `assigned_to`, `due_date`, `deleted_at` columns
+- [ ] `tasks.assigned_to` has foreign key to `users.id`
+- [ ] User model: `role` cast to string, `tasks()` hasMany relationship
+- [ ] Task model: `status` cast, `SoftDeletes` trait, `user()` belongsTo relationship, `$fillable` set
+
+**Verification:**
+- [ ] `php artisan migrate` runs without errors
+- [ ] `php artisan migrate:rollback` and re-migrate succeeds
+- [ ] Schema inspection shows correct columns and constraints
+
+**Dependencies:** Task 1
+
+**Files likely touched:**
+- `backend/database/migrations/xxxx_add_role_to_users_table.php`
+- `backend/database/migrations/xxxx_create_tasks_table.php`
+- `backend/app/Models/User.php`
+- `backend/app/Models/Task.php`
+
+**Estimated scope:** Small (4 files)
+
+---
+
+## Task 3: Create database seeder with test data
+
+**Description:** Create a DatabaseSeeder that creates 3 users (admin@example.com as admin, john@example.com and jane@example.com as users) and 10-15 sample tasks with varied statuses distributed across users.
+
+**Acceptance criteria:**
+- [ ] `admin@example.com` created with role=admin, password=password
+- [ ] `john@example.com` and `jane@example.com` created with role=user, password=password
+- [ ] 10-15 tasks created with mixed statuses (todo/in_progress/done)
+- [ ] Tasks distributed across all 3 users
+- [ ] Some tasks have due_date, some null
+
+**Verification:**
+- [ ] `php artisan migrate:fresh --seed` runs without errors
+- [ ] Database contains 3 users and 10-15 tasks
+
+**Dependencies:** Task 2
+
+**Files likely touched:**
+- `backend/database/seeders/DatabaseSeeder.php`
+
+**Estimated scope:** XS (1 file)
+
+---
+
+## Checkpoint: Foundation
+- [ ] `php artisan migrate:fresh --seed` succeeds
+- [ ] 3 users + 10-15 tasks in database
+- [ ] Models have correct relationships
+
+---
+
+## Phase 2: Backend API — Auth & CRUD
+
+## Task 4: Implement authentication API (login/logout with Sanctum)
+
+**Description:** Create AuthController with login (validates credentials, creates Sanctum PlainTextToken, returns token + user info) and logout (revokes current token). Define routes in `api.php`.
+
+**Acceptance criteria:**
+- [ ] `POST /api/login` with valid credentials returns `{ token, user: { id, name, email, role } }` with 200
+- [ ] `POST /api/login` with invalid credentials returns 401 with error message
+- [ ] `POST /api/login` validates email (required, email) and password (required)
+- [ ] `POST /api/logout` with valid Bearer token revokes the token and returns 204
+- [ ] `POST /api/logout` without token returns 401
+
+**Verification:**
+- [ ] Manual curl tests for login success, login failure, logout
+- [ ] Token can be used in subsequent authenticated requests
+
+**Dependencies:** Task 3
+
+**Files likely touched:**
+- `backend/app/Http/Controllers/AuthController.php`
+- `backend/app/Http/Requests/LoginRequest.php`
+- `backend/routes/api.php`
+
+**Estimated scope:** Small (3 files)
+
+---
+
+## Task 5: Implement users list endpoint
+
+**Description:** Create a simple endpoint `GET /api/users` that returns a list of users with `id` and `name` only, for populating the assignee dropdown in the frontend. Protected by `auth:sanctum`.
+
+**Acceptance criteria:**
+- [ ] `GET /api/users` returns `[{ id, name }, ...]` with 200
+- [ ] Requires authentication (returns 401 without token)
+- [ ] Returns all users regardless of role
+
+**Verification:**
+- [ ] Manual curl with Bearer token returns user list
+- [ ] Without token returns 401
+
+**Dependencies:** Task 4
+
+**Files likely touched:**
+- `backend/routes/api.php` (add route)
+- `backend/app/Http/Controllers/UserController.php`
+
+**Estimated scope:** XS (2 files)
+
+---
+
+## Task 6: Implement task CRUD endpoints with authorization
+
+**Description:** Create TaskController with index, store, show (optional), update, and destroy methods. Create StoreTaskRequest and UpdateTaskRequest for validation. Implement authorization: Admin has full access; User is scoped to own tasks. Create TaskResource for consistent JSON output.
+
+**Acceptance criteria:**
+- [ ] `POST /api/tasks`: Admin can assign to any user; User can only assign to self (403 if assigning to others)
+- [ ] `PUT /api/tasks/{id}`: Admin can update any task; User can only update own tasks (403 otherwise)
+- [ ] `DELETE /api/tasks/{id}`: Admin can delete any; User can only delete own (403 otherwise)
+- [ ] `GET /api/tasks`: Admin sees all; User sees only own tasks
+- [ ] StoreTaskRequest validates: title (required|string|max:255), description (nullable|string), status (required|in:todo,in_progress,done), assigned_to (required|exists:users,id), due_date (nullable|date)
+- [ ] UpdateTaskRequest validates same fields but all optional
+- [ ] Delete is soft-delete
+- [ ] 404 returned for non-existent task IDs
+- [ ] TaskResource formats response consistently
+
+**Verification:**
+- [ ] Manual API tests for each endpoint as admin and as user
+- [ ] Validation errors return 422 with field-level errors
+- [ ] Authorization violations return 403
+- [ ] Deleted tasks don't appear in GET index
+
+**Dependencies:** Task 4, Task 5
+
+**Files likely touched:**
+- `backend/app/Http/Controllers/TaskController.php`
+- `backend/app/Http/Requests/StoreTaskRequest.php`
+- `backend/app/Http/Requests/UpdateTaskRequest.php`
+- `backend/app/Http/Resources/TaskResource.php`
+- `backend/routes/api.php`
+
+**Estimated scope:** Medium (5 files)
+
+---
+
+## Task 7: Add filtering, search, and pagination to GET /api/tasks
+
+**Description:** Enhance the TaskController `index` method to support query parameters for filtering by status, assigned_to, text search on title, and pagination.
+
+**Acceptance criteria:**
+- [ ] `?status=todo` filters by status
+- [ ] `?assigned_to=2` filters by assignee (admin only; users already scoped)
+- [ ] `?search=keyword` searches by title (LIKE %keyword%)
+- [ ] Results are paginated (default 15 per page)
+- [ ] Filters can be combined
+- [ ] User's scope filter (own tasks only) cannot be bypassed by query params
+
+**Verification:**
+- [ ] Manual API tests with various filter combinations
+- [ ] Pagination metadata returned (`current_page`, `last_page`, `total`, etc.)
+- [ ] User cannot see other users' tasks even with `?assigned_to=other_id`
+
+**Dependencies:** Task 6
+
+**Files likely touched:**
+- `backend/app/Http/Controllers/TaskController.php` (update index method)
+
+**Estimated scope:** XS (1 file)
+
+---
+
+## Checkpoint: Backend API Complete
+- [ ] All API endpoints working and returning correct status codes
+- [ ] Admin vs User authorization verified
+- [ ] Filtering, search, and pagination working
+- [ ] Error responses are JSON with correct HTTP status codes
+
+---
+
+## Phase 3: Frontend SPA — Core
+
+## Task 8: Scaffold Vue 3 + Vuetify 3 + TypeScript frontend
+
+**Description:** Create a Vite + Vue 3 + TypeScript project in `frontend/`. Install and configure Vuetify 3, Vue Router, Pinia, and Axios. Set up the project structure with proper TypeScript types.
+
+**Acceptance criteria:**
+- [ ] `frontend/` contains a working Vite + Vue 3 + TypeScript project
+- [ ] Vuetify 3 installed and configured as a plugin
+- [ ] Vue Router configured with `/login` and `/tasks` routes
+- [ ] Pinia installed and configured
+- [ ] Axios configured with base URL pointing to `http://localhost:8000/api`
+- [ ] TypeScript interfaces defined for `User`, `Task`, `LoginCredentials`, `ApiResponse`
+- [ ] `npm run dev` starts without errors
+
+**Verification:**
+- [ ] `npm run dev` shows Vite dev server at `http://localhost:5173`
+- [ ] Vuetify components render correctly
+- [ ] No TypeScript compilation errors
+
+**Dependencies:** None (can be done parallel to backend tasks)
+
+**Files likely touched:**
+- `frontend/package.json`
+- `frontend/vite.config.ts`
+- `frontend/src/main.ts`
+- `frontend/src/plugins/vuetify.ts`
+- `frontend/src/router/index.ts`
+- `frontend/src/stores/` (directories)
+- `frontend/src/types/index.ts`
+- `frontend/src/api/axios.ts`
+
+**Estimated scope:** Medium (8 files)
+
+---
+
+## Task 9: Implement auth store, Axios setup, and Login page
+
+**Description:** Create the auth Pinia store (manages token in localStorage, user state, login/logout actions). Configure Axios interceptor to attach Bearer token and handle 401. Build the Login page with Vuetify form components.
+
+**Acceptance criteria:**
+- [ ] `useAuthStore` manages `token`, `user`, `isAuthenticated` (computed), login/logout actions
+- [ ] Token persisted in `localStorage`, loaded on app init
+- [ ] Axios interceptor attaches `Authorization: Bearer {token}` to all requests
+- [ ] Axios interceptor handles 401 by clearing auth and redirecting to `/login`
+- [ ] Login page has email + password fields with validation
+- [ ] Login page shows error message on invalid credentials
+- [ ] Successful login stores token and redirects to `/tasks`
+
+**Verification:**
+- [ ] Login with `admin@example.com` / `password` succeeds and redirects
+- [ ] Login with wrong password shows error
+- [ ] Token appears in localStorage after login
+- [ ] Page refresh preserves login state
+
+**Dependencies:** Task 4, Task 8
+
+**Files likely touched:**
+- `frontend/src/stores/auth.ts`
+- `frontend/src/api/axios.ts`
+- `frontend/src/pages/LoginPage.vue`
+
+**Estimated scope:** Small (3 files)
+
+---
+
+## Task 10: Implement router with navigation guards and AppHeader
+
+**Description:** Configure Vue Router navigation guards to redirect unauthenticated users to `/login`. Build the AppHeader component showing user name, role badge, and logout button.
+
+**Acceptance criteria:**
+- [ ] Unauthenticated user visiting `/tasks` is redirected to `/login`
+- [ ] Authenticated user visiting `/login` is redirected to `/tasks`
+- [ ] AppHeader shows current user name
+- [ ] AppHeader shows role badge (Admin/User) with distinct styling
+- [ ] Logout button calls auth store logout and redirects to `/login`
+- [ ] AppHeader only visible on authenticated routes
+
+**Verification:**
+- [ ] Direct URL access to `/tasks` without login redirects to `/login`
+- [ ] After login, header shows correct user info
+- [ ] Logout clears token and shows login page
+
+**Dependencies:** Task 9
+
+**Files likely touched:**
+- `frontend/src/router/index.ts` (add guards)
+- `frontend/src/components/AppHeader.vue`
+- `frontend/src/App.vue`
+
+**Estimated scope:** Small (3 files)
+
+---
+
+## Task 11: Implement Tasks page with data table, filters, and search
+
+**Description:** Create the tasks Pinia store and build the TasksPage with Vuetify `v-data-table-server`, status filter dropdown, assignee filter (admin only), search text field, and color-coded status chips. Implement pagination.
+
+**Acceptance criteria:**
+- [ ] `useTaskStore` manages tasks list, loading state, filters, pagination, and CRUD actions
+- [ ] Data table shows columns: Title, Assignee, Status, Due Date, Actions (Edit/Delete)
+- [ ] Status chips: grey for todo, blue for in_progress, green for done
+- [ ] Status dropdown filter triggers API re-fetch
+- [ ] Search input triggers API re-fetch (with debounce)
+- [ ] Assignee filter visible only to admin users
+- [ ] Pagination works (server-side via API)
+- [ ] Loading spinner shown during API calls
+- [ ] Delete button with confirmation triggers soft-delete and refreshes list
+- [ ] Error states shown on API failure
+
+**Verification:**
+- [ ] Login as admin, see all tasks in table
+- [ ] Login as john@example.com, see only own tasks
+- [ ] Filter by status works
+- [ ] Search by title works
+- [ ] Delete removes task from list
+- [ ] Pagination navigation works
+
+**Dependencies:** Task 7, Task 10
+
+**Files likely touched:**
+- `frontend/src/stores/tasks.ts`
+- `frontend/src/pages/TasksPage.vue`
+
+**Estimated scope:** Medium (2 files, but complex)
+
+---
+
+## Task 12: Implement TaskForm dialog for create/edit with feedback
+
+**Description:** Build a reusable TaskForm.vue modal dialog component used for both creating and editing tasks. Includes title, description, status select, assignee select (fetched from API), and due date picker. Shows snackbar notifications on success/failure.
+
+**Acceptance criteria:**
+- [ ] TaskForm works in both "create" and "edit" modes
+- [ ] "Create" mode: empty form, submits POST /api/tasks
+- [ ] "Edit" mode: pre-populated with task data, submits PUT /api/tasks/{id}
+- [ ] Title field required with validation
+- [ ] Status select with todo/in_progress/done options
+- [ ] Assignee select populated from GET /api/users
+- [ ] Due date picker using Vuetify date component
+- [ ] Admin sees all users in assignee dropdown; User sees only self (or dropdown is hidden/disabled)
+- [ ] Success snackbar on create/edit
+- [ ] Error snackbar on validation failure or API error
+- [ ] Dialog closes after successful submit
+- [ ] Tasks list refreshes after create/edit
+
+**Verification:**
+- [ ] Create task as admin with all fields → appears in table
+- [ ] Edit task → changes reflected
+- [ ] Validation error shown for empty title
+- [ ] Snackbar appears on success and error
+- [ ] Assignee dropdown loads user list
+
+**Dependencies:** Task 11
+
+**Files likely touched:**
+- `frontend/src/components/TaskForm.vue`
+- `frontend/src/pages/TasksPage.vue` (integrate form)
+
+**Estimated scope:** Medium (2 files)
+
+---
+
+## Checkpoint: Frontend Complete
+- [ ] Full login → task list → create/edit/delete → logout flow works
+- [ ] Admin and User permissions correctly enforced in UI
+- [ ] All UI states handled (loading, empty, error)
+- [ ] Snackbar feedback on all actions
+
+---
+
+## Phase 4: Documentation & Polish
+
+## Task 13: Write README.md with setup instructions
+
+**Description:** Write a clear README.md at the project root with step-by-step setup instructions for both backend and frontend, test account credentials, tech stack summary, and any assumptions made.
+
+**Acceptance criteria:**
+- [ ] Backend setup: install, configure .env, migrate, seed, serve
+- [ ] Frontend setup: install, dev server
+- [ ] Test accounts listed with credentials
+- [ ] Tech stack and project structure described
+- [ ] Assumptions documented
+
+**Verification:**
+- [ ] A reviewer can follow the README and have the app running in < 5 minutes
+
+**Dependencies:** Task 12
+
+**Files likely touched:**
+- `README.md`
+
+**Estimated scope:** XS (1 file)
+
+---
+
+## Task 14: Write ANSWERS.md with interview question responses
+
+**Description:** Write comprehensive answers to the 4 interview questions: API optimization at 1M+ records, security best practices for Laravel API + Vue SPA, TypeScript benefits in Vue 3, and a code sample of typed Vue 3 component.
+
+**Acceptance criteria:**
+- [ ] 4.1.1: 5-10 specific solutions for optimizing GET /api/tasks at 1M+ records (indexing, pagination, caching, queue, read replicas, etc.)
+- [ ] 4.1.2: Comprehensive security solutions (SQL injection, XSS, CSRF, token storage, HTTPS, rate limiting, etc.)
+- [ ] 4.2.1: Clear benefits of TypeScript in Vue 3 SPA (type safety, IDE support, refactoring, etc.)
+- [ ] 4.2.2: Working code sample with `<script setup lang="ts">`, `defineProps<>()` with explicit types
+
+**Verification:**
+- [ ] All 4 questions answered with depth and specifics
+- [ ] Code sample compiles without TypeScript errors
+
+**Dependencies:** None (can be done anytime)
+
+**Files likely touched:**
+- `ANSWERS.md`
+
+**Estimated scope:** XS (1 file)
+
+---
+
+## Checkpoint: Complete
+- [ ] All 14 tasks completed
+- [ ] Full app works end-to-end
+- [ ] README verified by following setup steps
+- [ ] ANSWERS.md complete with all 4 questions
+- [ ] Ready for submission
