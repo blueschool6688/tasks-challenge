@@ -1,0 +1,15 @@
+{
+  "name": "tasks-challenge",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently --kill-others --prefix \"[{name}]\" --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"cd backend && php artisan serve --host=127.0.0.1 --port=8000\" \"cd frontend && npm run dev\"",
+    "dev:backend": "cd backend && php artisan serve --host=127.0.0.1 --port=8000",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "test": "cd backend && php artisan test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
