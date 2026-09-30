@@ -35,6 +35,7 @@ class Task extends Model
     {
         return [
             'status' => 'string',
+            'assigned_to' => 'integer',
             'due_date' => 'date',
         ];
     }
@@ -48,10 +49,10 @@ class Task extends Model
     }
 
     /**
-     * Alias for user relationship.
+     * Assignee relationship.
      */
     public function assignee(): BelongsTo
     {
-        return $this->user();
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 }

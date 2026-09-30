@@ -95,15 +95,15 @@
 **Description:** Create AuthController with login (validates credentials, creates Sanctum PlainTextToken, returns token + user info) and logout (revokes current token). Define routes in `api.php`.
 
 **Acceptance criteria:**
-- [ ] `POST /api/login` with valid credentials returns `{ token, user: { id, name, email, role } }` with 200
-- [ ] `POST /api/login` with invalid credentials returns 401 with error message
-- [ ] `POST /api/login` validates email (required, email) and password (required)
-- [ ] `POST /api/logout` with valid Bearer token revokes the token and returns 204
-- [ ] `POST /api/logout` without token returns 401
+- [x] `POST /api/login` with valid credentials returns `{ token, user: { id, name, email, role } }` with 200
+- [x] `POST /api/login` with invalid credentials returns 401 with error message
+- [x] `POST /api/login` validates email (required, email) and password (required)
+- [x] `POST /api/logout` with valid Bearer token revokes the token and returns 204
+- [x] `POST /api/logout` without token returns 401
 
 **Verification:**
-- [ ] Manual curl tests for login success, login failure, logout
-- [ ] Token can be used in subsequent authenticated requests
+- [x] Automated PHPUnit Feature tests for login success, login failure, logout
+- [x] Token can be used in subsequent authenticated requests
 
 **Dependencies:** Task 3
 
@@ -121,13 +121,13 @@
 **Description:** Create a simple endpoint `GET /api/users` that returns a list of users with `id` and `name` only, for populating the assignee dropdown in the frontend. Protected by `auth:sanctum`.
 
 **Acceptance criteria:**
-- [ ] `GET /api/users` returns `[{ id, name }, ...]` with 200
-- [ ] Requires authentication (returns 401 without token)
-- [ ] Returns all users regardless of role
+- [x] `GET /api/users` returns `[{ id, name }, ...]` with 200
+- [x] Requires authentication (returns 401 without token)
+- [x] Returns all users regardless of role
 
 **Verification:**
-- [ ] Manual curl with Bearer token returns user list
-- [ ] Without token returns 401
+- [x] Automated PHPUnit Feature test returns user list
+- [x] Without token returns 401
 
 **Dependencies:** Task 4
 
@@ -144,21 +144,21 @@
 **Description:** Create TaskController with index, store, show (optional), update, and destroy methods. Create StoreTaskRequest and UpdateTaskRequest for validation. Implement authorization: Admin has full access; User is scoped to own tasks. Create TaskResource for consistent JSON output.
 
 **Acceptance criteria:**
-- [ ] `POST /api/tasks`: Admin can assign to any user; User can only assign to self (403 if assigning to others)
-- [ ] `PUT /api/tasks/{id}`: Admin can update any task; User can only update own tasks (403 otherwise)
-- [ ] `DELETE /api/tasks/{id}`: Admin can delete any; User can only delete own (403 otherwise)
-- [ ] `GET /api/tasks`: Admin sees all; User sees only own tasks
-- [ ] StoreTaskRequest validates: title (required|string|max:255), description (nullable|string), status (required|in:todo,in_progress,done), assigned_to (required|exists:users,id), due_date (nullable|date)
-- [ ] UpdateTaskRequest validates same fields but all optional
-- [ ] Delete is soft-delete
-- [ ] 404 returned for non-existent task IDs
-- [ ] TaskResource formats response consistently
+- [x] `POST /api/tasks`: Admin can assign to any user; User can only assign to self (403 if assigning to others)
+- [x] `PUT /api/tasks/{id}`: Admin can update any task; User can only update own tasks (403 otherwise)
+- [x] `DELETE /api/tasks/{id}`: Admin can delete any; User can only delete own (403 otherwise)
+- [x] `GET /api/tasks`: Admin sees all; User sees only own tasks
+- [x] StoreTaskRequest validates: title (required|string|max:255), description (nullable|string), status (required|in:todo,in_progress,done), assigned_to (required|exists:users,id), due_date (nullable|date)
+- [x] UpdateTaskRequest validates same fields but all optional
+- [x] Delete is soft-delete
+- [x] 404 returned for non-existent task IDs
+- [x] TaskResource formats response consistently
 
 **Verification:**
-- [ ] Manual API tests for each endpoint as admin and as user
-- [ ] Validation errors return 422 with field-level errors
-- [ ] Authorization violations return 403
-- [ ] Deleted tasks don't appear in GET index
+- [x] Automated PHPUnit tests for each endpoint as admin and as user
+- [x] Validation errors return 422 with field-level errors
+- [x] Authorization violations return 403
+- [x] Deleted tasks don't appear in GET index
 
 **Dependencies:** Task 4, Task 5
 
@@ -178,17 +178,17 @@
 **Description:** Enhance the TaskController `index` method to support query parameters for filtering by status, assigned_to, text search on title, and pagination.
 
 **Acceptance criteria:**
-- [ ] `?status=todo` filters by status
-- [ ] `?assigned_to=2` filters by assignee (admin only; users already scoped)
-- [ ] `?search=keyword` searches by title (LIKE %keyword%)
-- [ ] Results are paginated (default 15 per page)
-- [ ] Filters can be combined
-- [ ] User's scope filter (own tasks only) cannot be bypassed by query params
+- [x] `?status=todo` filters by status
+- [x] `?assigned_to=2` filters by assignee (admin only; users already scoped)
+- [x] `?search=keyword` searches by title (LIKE %keyword%)
+- [x] Results are paginated (default 15 per page)
+- [x] Filters can be combined
+- [x] User's scope filter (own tasks only) cannot be bypassed by query params
 
 **Verification:**
-- [ ] Manual API tests with various filter combinations
-- [ ] Pagination metadata returned (`current_page`, `last_page`, `total`, etc.)
-- [ ] User cannot see other users' tasks even with `?assigned_to=other_id`
+- [x] Automated PHPUnit tests with various filter combinations
+- [x] Pagination metadata returned (`current_page`, `last_page`, `total`, etc.)
+- [x] User cannot see other users' tasks even with `?assigned_to=other_id`
 
 **Dependencies:** Task 6
 
@@ -200,10 +200,10 @@
 ---
 
 ## Checkpoint: Backend API Complete
-- [ ] All API endpoints working and returning correct status codes
-- [ ] Admin vs User authorization verified
-- [ ] Filtering, search, and pagination working
-- [ ] Error responses are JSON with correct HTTP status codes
+- [x] All API endpoints working and returning correct status codes
+- [x] Admin vs User authorization verified
+- [x] Filtering, search, and pagination working
+- [x] Error responses are JSON with correct HTTP status codes
 
 ---
 

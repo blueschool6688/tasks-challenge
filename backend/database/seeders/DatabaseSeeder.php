@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Admin User',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'role' => 'admin',
             ]
         );
@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'john@example.com'],
             [
                 'name' => 'John Doe',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'role' => 'user',
             ]
         );
@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'jane@example.com'],
             [
                 'name' => 'Jane Smith',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'role' => 'user',
             ]
         );
@@ -133,7 +133,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($tasks as $taskData) {
-            Task::create($taskData);
+            Task::firstOrCreate(['title' => $taskData['title']], $taskData);
         }
     }
 }
