@@ -9,7 +9,7 @@ A clean, production-grade task management web application built with **Laravel 1
 ### Backend
 - **Framework:** Laravel 11.x
 - **Language:** PHP 8.3 with `declare(strict_types=1);` in all application files
-- **Database:** SQLite (default for zero-configuration reviewer evaluation; MySQL 8 ready)
+- **Database:** MySQL 8 (default for zero-configuration reviewer evaluation; SQLite 3 ready)
 - **Authentication:** Laravel Sanctum (stateless API tokens)
 - **API Standards:** JSON REST with standard HTTP status codes (`200`, `201`, `204`, `401`, `403`, `404`, `422`)
 - **Testing:** PHPUnit / Pest Feature & Unit test suites
@@ -75,6 +75,7 @@ php artisan test
 php artisan serve
 ```
 Backend API will be accessible at: **`http://localhost:8000`**
+Interactive Swagger / OpenAPI Docs: **`http://localhost:8000/docs`**
 
 ---
 

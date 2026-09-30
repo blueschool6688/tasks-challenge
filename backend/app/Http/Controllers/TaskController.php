@@ -81,15 +81,9 @@ class TaskController extends Controller
     /**
      * Display the specified task.
      */
-    public function show(Request $request, Task $task): JsonResponse|TaskResource
+    public function show(Request $request, Task $task): TaskResource
     {
-        $user = $request->user();
-
-        if (! $user->isAdmin() && (int) $task->assigned_to !== (int) $user->id) {
-            return response()->json([
-                'message' => 'This action is unauthorized.',
-            ], 403);
-        }
+        \Illuminate\Support\Facades\Gate::authorize('view', $task);
 
         $task->load('assignee');
 
@@ -112,13 +106,7 @@ class TaskController extends Controller
      */
     public function destroy(Request $request, Task $task): JsonResponse
     {
-        $user = $request->user();
-
-        if (! $user->isAdmin() && (int) $task->assigned_to !== (int) $user->id) {
-            return response()->json([
-                'message' => 'This action is unauthorized.',
-            ], 403);
-        }
+        \Illuminate\Support\Facades\Gate::authorize('delete', $task);
 
         $task->delete();
 

@@ -22,12 +22,9 @@ class StoreTaskRequest extends FormRequest
             return false;
         }
 
-        if ($user->isAdmin()) {
-            return true;
-        }
+        $assignedTo = $this->filled('assigned_to') ? (int) $this->input('assigned_to') : null;
 
-        // Regular user must assign to themselves
-        return (int) $this->input('assigned_to') === (int) $user->id;
+        return $user->can('create', [\App\Models\Task::class, $assignedTo]);
     }
 
     /**

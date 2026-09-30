@@ -24,31 +24,18 @@ class UpdateTaskRequest extends FormRequest
             return false;
         }
 
-        if ($user->isAdmin()) {
-            return true;
-        }
-
         $task = $this->route('task');
         if (! $task instanceof Task) {
             $task = Task::find($this->route('task'));
         }
 
         if (! $task) {
-            // Let the controller handle 404
             return true;
         }
 
-        // Regular user can only update tasks currently assigned to them
-        if ((int) $task->assigned_to !== (int) $user->id) {
-            return false;
-        }
+        $newAssignedTo = $this->filled('assigned_to') ? (int) $this->input('assigned_to') : null;
 
-        // Regular user cannot reassign the task to someone else
-        if ($this->has('assigned_to') && (int) $this->input('assigned_to') !== (int) $user->id) {
-            return false;
-        }
-
-        return true;
+        return $user->can('update', [$task, $newAssignedTo]);
     }
 
     /**

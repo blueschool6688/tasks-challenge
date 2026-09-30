@@ -272,4 +272,83 @@ class TaskApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonCount(0, 'data');
     }
+
+    public function test_admin_can_view_any_single_task(): void
+    {
+        $task = Task::factory()->create(['assigned_to' => $this->user1->id]);
+
+        Sanctum::actingAs($this->admin);
+
+        $response = $this->getJson('/api/tasks/'.$task->id);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.id', $task->id);
+    }
+
+    public function test_regular_user_can_view_own_single_task(): void
+    {
+        $task = Task::factory()->create(['assigned_to' => $this->user1->id]);
+
+        Sanctum::actingAs($this->user1);
+
+        $response = $this->getJson('/api/tasks/'.$task->id);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.id', $task->id);
+    }
+
+    public function test_regular_user_cannot_view_other_user_single_task(): void
+    {
+        $task = Task::factory()->create(['assigned_to' => $this->user2->id]);
+
+        Sanctum::actingAs($this->user1);
+
+        $response = $this->getJson('/api/tasks/'.$task->id);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_view_non_existent_task_returns_404(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $response = $this->getJson('/api/tasks/99999');
+
+        $response->assertStatus(404);
+    }
+
+    public function test_unauthenticated_requests_cannot_access_tasks_or_users(): void
+    {
+        $this->getJson('/api/tasks')->assertStatus(401);
+        $this->postJson('/api/tasks', [])->assertStatus(401);
+        $this->getJson('/api/users')->assertStatus(401);
+    }
+
+    public function test_tasks_sorting_and_pagination_parameters(): void
+    {
+        Task::factory()->count(10)->create(['assigned_to' => $this->admin->id]);
+
+        Sanctum::actingAs($this->admin);
+
+        $response = $this->getJson('/api/tasks?per_page=5&page=1&sort_by=id&sort_order=asc');
+
+        $response->assertStatus(200)
+            ->assertJsonCount(5, 'data')
+            ->assertJsonPath('meta.per_page', 5)
+            ->assertJsonPath('meta.total', 10);
+    }
+
+    public function test_task_title_max_length_validation(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $response = $this->postJson('/api/tasks', [
+            'title' => str_repeat('a', 256),
+            'status' => 'todo',
+            'assigned_to' => $this->admin->id,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['title']);
+    }
 }

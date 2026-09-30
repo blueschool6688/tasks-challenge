@@ -1,0 +1,487 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Team Task Manager REST API",
+    "description": "Comprehensive REST API specification for Team Task Manager built with Laravel 11, SQLite, and Laravel Sanctum.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Engineering Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    { "name": "Authentication", "description": "Login, session revocation, and current user info" },
+    { "name": "Users", "description": "Team member directory for task assignment" },
+    { "name": "Tasks", "description": "Role-based task management with search, filter, and pagination" }
+  ],
+  "paths": {
+    "/api/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Authenticate user and issue Sanctum token",
+        "description": "Validates email and password, generates a plainTextToken, and returns user information with role.",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Revoke current access token",
+        "operationId": "logout",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": {
+            "description": "Token revoked successfully"
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get authenticated user profile",
+        "operationId": "getMe",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Current user details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List team members for task assignment",
+        "operationId": "getUsers",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of team users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "List tasks with filters, search, and pagination",
+        "description": "Admin sees all tasks across the company. Regular user sees only tasks assigned to themselves. Supports status filter, assignee filter, and debounced search.",
+        "operationId": "getTasks",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by task status",
+            "schema": {
+              "type": "string",
+              "enum": ["todo", "in_progress", "done"]
+            }
+          },
+          {
+            "name": "assigned_to",
+            "in": "query",
+            "required": false,
+            "description": "Filter by assignee user ID (Admin only)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Search keyword matching title or description",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "Items per page (max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["id", "title", "status", "due_date", "created_at"],
+              "default": "created_at"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedTasksResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Create a new task",
+        "description": "Admin can assign to any user. Regular user can only assign to themselves (HTTP 403 otherwise).",
+        "operationId": "createTask",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Task" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized assignment (user trying to assign to another member)"
+          },
+          "422": {
+            "description": "Validation failed"
+          }
+        }
+      }
+    },
+    "/api/tasks/{task}": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Retrieve single task details",
+        "operationId": "getTaskById",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "task",
+            "in": "path",
+            "required": true,
+            "description": "Task ID",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Task" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Forbidden - Task belongs to another member" },
+          "404": { "description": "Task not found" }
+        }
+      },
+      "put": {
+        "tags": ["Tasks"],
+        "summary": "Update an existing task",
+        "description": "Admin can update and reassign any task. User can only update their own task and cannot reassign it.",
+        "operationId": "updateTask",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "task",
+            "in": "path",
+            "required": true,
+            "description": "Task ID",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Task" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Not Found" },
+          "422": { "description": "Validation failed" }
+        }
+      },
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Soft delete a task",
+        "description": "Admin can delete any task. User can only delete own task. Sets deleted_at timestamp.",
+        "operationId": "deleteTask",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "task",
+            "in": "path",
+            "required": true,
+            "description": "Task ID",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Task soft-deleted successfully" },
+          "403": { "description": "Forbidden - Cannot delete another member's task" },
+          "404": { "description": "Task not found" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum Token",
+        "description": "Enter the Sanctum PlainTextToken obtained from POST /api/login"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "Admin User" },
+          "email": { "type": "string", "example": "admin@example.com" },
+          "role": { "type": "string", "enum": ["admin", "user"], "example": "admin" }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": { "type": "string", "example": "Set up CI/CD pipeline" },
+          "description": { "type": "string", "nullable": true, "example": "Configure GitHub Actions" },
+          "status": { "type": "string", "enum": ["todo", "in_progress", "done"], "example": "in_progress" },
+          "assigned_to": { "type": "integer", "example": 1 },
+          "due_date": { "type": "string", "format": "date", "nullable": true, "example": "2026-10-15" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "assignee": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "admin@example.com" },
+          "password": { "type": "string", "format": "password", "example": "password" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string", "example": "1|q6xV5...sampletoken" },
+          "user": { "$ref": "#/components/schemas/User" }
+        }
+      },
+      "StoreTaskRequest": {
+        "type": "object",
+        "required": ["title", "status", "assigned_to"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 255, "example": "Implement unit testing" },
+          "description": { "type": "string", "nullable": true, "example": "Detailed task specification" },
+          "status": { "type": "string", "enum": ["todo", "in_progress", "done"], "example": "todo" },
+          "assigned_to": { "type": "integer", "example": 1 },
+          "due_date": { "type": "string", "format": "date", "nullable": true, "example": "2026-10-20" }
+        }
+      },
+      "UpdateTaskRequest": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "maxLength": 255 },
+          "description": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["todo", "in_progress", "done"] },
+          "assigned_to": { "type": "integer" },
+          "due_date": { "type": "string", "format": "date", "nullable": true }
+        }
+      },
+      "PaginatedTasksResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Task" }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "current_page": { "type": "integer", "example": 1 },
+              "last_page": { "type": "integer", "example": 2 },
+              "per_page": { "type": "integer", "example": 10 },
+              "total": { "type": "integer", "example": 12 }
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "The title field is required." },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Invalid email or password." }
+        }
+      }
+    }
+  }
+}
