@@ -31,8 +31,25 @@ A clean, production-grade task management web application built with **Laravel 1
 - **PHP** >= 8.3 with `pdo_sqlite`, `openssl`, `mbstring` extensions
 - **Composer** >= 2.x
 - **Node.js** >= 18.x and **npm** >= 9.x
+- **Make** (optional, included in Git Bash / Linux / Mac / WSL)
 
 ---
+
+### ⚡ Quick Commands (via Makefile)
+
+If you have `make` installed (available in Git Bash, Laragon, or Linux/macOS), you can manage the whole project with one-liners from the root directory:
+
+```bash
+make help          # Show all available commands
+make setup         # One-step complete setup (install dependencies + migrate + seed)
+make dev           # Instructions for running dev servers
+make dev-backend   # Start Laravel API server on http://localhost:8000
+make dev-frontend  # Start Vue 3 Vite dev server on http://localhost:5173
+make test          # Run backend tests + frontend type check
+make format        # Automatically format code with Laravel Pint
+make build         # Build frontend SPA & optimize backend for production
+make clean         # Clear caches and build artifacts
+```
 
 ### 1. Backend Setup
 
