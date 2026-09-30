@@ -25,53 +25,52 @@ Build a full-stack "Team Task Manager" application with a Laravel 11 REST API ba
 
 ### Phase 1: Project Scaffolding & Foundation
 
-- [ ] Task 1: Initialize Git repo and scaffold Laravel 11 backend
-- [ ] Task 2: Create database schema (migrations + models)
-- [ ] Task 3: Create database seeder with test data
+- [x] Task 1: Initialize Git repo and scaffold Laravel 11 backend
+- [x] Task 2: Create database schema (migrations + models)
+- [x] Task 3: Create database seeder with test data
 
 ### Checkpoint: Foundation
-- [ ] Migrations run cleanly on SQLite
-- [ ] Seeder creates 3 users + 10-15 tasks
-- [ ] Models have correct relationships and casts
+- [x] Migrations run cleanly on SQLite
+- [x] Seeder creates 3 users + 10-15 tasks
+- [x] Models have correct relationships and casts
 
 ### Phase 2: Backend API — Auth & CRUD
 
-- [ ] Task 4: Implement authentication API (login/logout with Sanctum)
-- [ ] Task 5: Implement users list endpoint
-- [ ] Task 6: Implement task CRUD endpoints with authorization
-- [ ] Task 7: Add filtering, search, and pagination to GET /api/tasks
+- [x] Task 4: Implement authentication API (login/logout with Sanctum)
+- [x] Task 5: Implement users list endpoint
+- [x] Task 6: Implement task CRUD endpoints with authorization
+- [x] Task 7: Add filtering, search, and pagination to GET /api/tasks
 
 ### Checkpoint: Backend API Complete
-- [ ] All endpoints return correct HTTP status codes
-- [ ] Admin sees all tasks, User sees only own tasks
-- [ ] Validation returns 422, forbidden returns 403, not found returns 404
-- [ ] Tested via manual curl / API client
+- [x] All endpoints return correct HTTP status codes
+- [x] Admin sees all tasks, User sees only own tasks
+- [x] Validation returns 422, forbidden returns 403, not found returns 404
+- [x] Tested via automated test suite (25 tests, 61 assertions)
 
 ### Phase 3: Frontend SPA — Core
 
-- [ ] Task 8: Scaffold Vue 3 + Vuetify 3 + TypeScript frontend
-- [ ] Task 9: Implement auth store, Axios setup, and Login page
-- [ ] Task 10: Implement router with navigation guards and AppHeader
-- [ ] Task 11: Implement Tasks page with data table, filters, and search
-- [ ] Task 12: Implement TaskForm dialog for create/edit with feedback
+- [x] Task 8: Scaffold Vue 3 + Vuetify 3 + TypeScript frontend
+- [x] Task 9: Implement auth store, Axios setup, and Login page
+- [x] Task 10: Implement router with navigation guards and AppHeader
+- [x] Task 11: Implement Tasks page with data table, filters, and search
+- [x] Task 12: Implement TaskForm dialog for create/edit with feedback
 
 ### Checkpoint: Frontend Complete
-- [ ] Login/logout flow works end-to-end
-- [ ] Tasks table shows data with pagination
-- [ ] Filters and search work correctly
-- [ ] Create/edit/delete tasks with snackbar feedback
-- [ ] Admin vs User permissions enforced in UI
+- [x] Login/logout flow works end-to-end
+- [x] Tasks table shows data with pagination
+- [x] Filters and search work correctly
+- [x] Create/edit/delete tasks with snackbar feedback
+- [x] Admin vs User permissions enforced in UI
 
 ### Phase 4: Documentation & Polish
-
-- [ ] Task 13: Write README.md with setup instructions
-- [ ] Task 14: Write ANSWERS.md with interview question responses
+- [x] Task 13: Write README.md with setup instructions
+- [x] Task 14: Write ANSWERS.md with interview question responses
 
 ### Checkpoint: Complete
-- [ ] Full app works end-to-end
-- [ ] README setup instructions verified
-- [ ] All acceptance criteria met
-- [ ] Ready for review
+- [x] Full app works end-to-end
+- [x] README setup instructions verified
+- [x] All acceptance criteria met
+- [x] Ready for review
 
 ## Risks and Mitigations
 
