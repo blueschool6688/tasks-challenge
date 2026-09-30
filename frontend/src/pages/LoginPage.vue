@@ -1,14 +1,14 @@
 <template>
   <v-container class="fill-height justify-center" fluid>
-    <v-card width="100%" max-width="440" rounded="xl" elevation="6" class="pa-4">
+    <v-card width="100%" max-width="440" rounded="xl" elevation="1" border class="pa-4 bg-surface">
       <v-card-item class="text-center pt-4 pb-2">
         <v-avatar color="primary" size="56" class="mb-3">
-          <v-icon icon="mdi-format-list-checks" size="32" color="white" />
+          <v-icon icon="mdi-format-list-checks" size="30" color="white" />
         </v-avatar>
-        <v-card-title class="text-h5 font-weight-bold">
+        <v-card-title class="text-h5 font-weight-bold tracking-tight">
           Team Task Manager
         </v-card-title>
-        <v-card-subtitle class="text-body-2 mt-1">
+        <v-card-subtitle class="text-body-2 mt-1 text-medium-emphasis">
           Sign in to your account to manage tasks
         </v-card-subtitle>
       </v-card-item>
@@ -73,8 +73,8 @@
 
         <!-- Quick Fill Helper for Demo / Evaluation -->
         <div class="text-center">
-          <p class="text-caption text-medium-emphasis mb-2">
-            Click to fill test credentials:
+          <p class="text-caption text-medium-emphasis mb-2 font-weight-medium">
+            Demo quick login accounts:
           </p>
           <div class="d-flex flex-wrap justify-center ga-2">
             <v-chip

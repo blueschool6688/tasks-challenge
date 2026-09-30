@@ -6,6 +6,7 @@ const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
+  withCredentials: true,
 })
 
 // Request interceptor: attach Sanctum Bearer token from localStorage

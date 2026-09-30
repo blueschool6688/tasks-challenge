@@ -30,7 +30,7 @@
         <v-col cols="12" md="4" sm="6">
           <v-text-field
             v-model="searchInput"
-            placeholder="Search tasks by title..."
+            placeholder="Search tasks by title or description..."
             variant="outlined"
             density="compact"
             prepend-inner-icon="mdi-magnify"
@@ -93,18 +93,18 @@
       <v-table hover>
         <thead>
           <tr>
-            <th class="text-left font-weight-bold">Title</th>
-            <th class="text-left font-weight-bold">Assignee</th>
-            <th class="text-left font-weight-bold">Status</th>
-            <th class="text-left font-weight-bold">Due Date</th>
-            <th class="text-right font-weight-bold pr-6">Actions</th>
+            <th class="text-left font-weight-bold" style="min-width: 250px;">Title</th>
+            <th class="text-left font-weight-bold" style="min-width: 170px;">Assignee</th>
+            <th class="text-left font-weight-bold" style="min-width: 140px;">Status</th>
+            <th class="text-left font-weight-bold" style="min-width: 140px;">Due Date</th>
+            <th class="text-right font-weight-bold pr-6" style="min-width: 110px;">Actions</th>
           </tr>
         </thead>
         <tbody>
           <!-- Loading State -->
           <tr v-if="taskStore.loading && taskStore.tasks.length === 0">
             <td colspan="5" class="text-center py-10">
-              <v-progress-circular indeterminate color="primary" size="48" />
+              <v-progress-circular indeterminate color="primary" size="44" />
               <div class="text-caption text-medium-emphasis mt-2">Loading tasks...</div>
             </td>
           </tr>
@@ -112,7 +112,7 @@
           <!-- Empty State -->
           <tr v-else-if="taskStore.tasks.length === 0">
             <td colspan="5" class="text-center py-12">
-              <v-icon icon="mdi-clipboard-text-outline" size="64" color="grey-lighten-1" class="mb-2" />
+              <v-icon icon="mdi-clipboard-text-outline" size="56" color="grey-lighten-1" class="mb-2" />
               <div class="text-h6 text-medium-emphasis">No tasks found</div>
               <div class="text-body-2 text-medium-emphasis mb-4">
                 Try adjusting your search criteria or create a new task.
@@ -130,7 +130,7 @@
               <div class="font-weight-medium text-body-1 text-high-emphasis">
                 {{ task.title }}
               </div>
-              <div v-if="task.description" class="text-caption text-medium-emphasis text-truncate" style="max-width: 400px;">
+              <div v-if="task.description" class="text-caption text-medium-emphasis text-truncate" style="max-width: 420px;">
                 {{ task.description }}
               </div>
             </td>
@@ -140,7 +140,7 @@
               <div class="d-flex align-center ga-2">
                 <v-avatar size="28" :color="task.assignee?.role === 'admin' ? 'deep-purple' : 'primary'">
                   <span class="text-caption text-white font-weight-bold">
-                    {{ getInitials(task.assignee?.name || 'User') }}
+                    {{ getUserInitials(task.assignee?.name || 'User') }}
                   </span>
                 </v-avatar>
                 <div>
@@ -157,24 +157,34 @@
             <!-- Status Chip -->
             <td>
               <v-chip
-                :color="getStatusColor(task.status)"
+                :color="getTaskStatusColor(task.status)"
                 variant="flat"
                 size="small"
                 class="font-weight-bold text-uppercase"
               >
-                <v-icon start size="12">mdi-circle</v-icon>
-                {{ formatStatus(task.status) }}
+                <v-icon start size="10">mdi-circle</v-icon>
+                {{ formatTaskStatus(task.status) }}
               </v-chip>
             </td>
 
             <!-- Due Date -->
             <td>
-              <div v-if="task.due_date" class="d-flex align-center ga-1 text-body-2" :class="isOverdue(task.due_date, task.status) ? 'text-error font-weight-medium' : 'text-medium-emphasis'">
-                <v-icon size="16" :color="isOverdue(task.due_date, task.status) ? 'error' : 'grey'">
+              <div
+                v-if="task.due_date"
+                class="d-flex align-center ga-1 text-body-2"
+                :class="isTaskOverdue(task.due_date, task.status) ? 'text-error font-weight-medium' : 'text-medium-emphasis'"
+              >
+                <v-icon size="16" :color="isTaskOverdue(task.due_date, task.status) ? 'error' : 'grey'">
                   mdi-calendar-clock
                 </v-icon>
-                {{ formatDate(task.due_date) }}
-                <v-chip v-if="isOverdue(task.due_date, task.status)" size="x-small" color="error" variant="flat" class="ml-1">
+                {{ formatTaskDate(task.due_date) }}
+                <v-chip
+                  v-if="isTaskOverdue(task.due_date, task.status)"
+                  size="x-small"
+                  color="error"
+                  variant="flat"
+                  class="ml-1"
+                >
                   Overdue
                 </v-chip>
               </div>
@@ -278,11 +288,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
 import { useAuthStore } from '@/stores/auth'
 import TaskForm from '@/components/TaskForm.vue'
-import type { Task, TaskStatus } from '@/types'
+import {
+  TASK_STATUS_OPTIONS,
+  formatTaskStatus,
+  getTaskStatusColor,
+  isTaskOverdue,
+  formatTaskDate,
+  getUserInitials,
+} from '@/utils/task'
+import type { Task } from '@/types'
 
 const taskStore = useTaskStore()
 const authStore = useAuthStore()
@@ -298,9 +316,7 @@ const taskToDelete = ref<Task | null>(null)
 
 const statusFilterOptions = [
   { title: 'All Statuses', value: '' },
-  { title: 'To Do', value: 'todo' },
-  { title: 'In Progress', value: 'in_progress' },
-  { title: 'Done', value: 'done' },
+  ...TASK_STATUS_OPTIONS.map((opt) => ({ title: opt.title, value: opt.value })),
 ]
 
 const assigneeFilterOptions = computed(() => [
@@ -313,6 +329,12 @@ onMounted(async () => {
     taskStore.fetchTasks(),
     taskStore.fetchUsers(),
   ])
+})
+
+onUnmounted(() => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
 })
 
 function onSearchInput(val: string | null): void {
@@ -376,61 +398,5 @@ async function executeDelete(): Promise<void> {
       taskToDelete.value = null
     }
   }
-}
-
-function getStatusColor(status: TaskStatus): string {
-  switch (status) {
-    case 'todo':
-      return 'grey-darken-1'
-    case 'in_progress':
-      return 'blue'
-    case 'done':
-      return 'green'
-    default:
-      return 'grey'
-  }
-}
-
-function formatStatus(status: TaskStatus): string {
-  switch (status) {
-    case 'todo':
-      return 'To Do'
-    case 'in_progress':
-      return 'In Progress'
-    case 'done':
-      return 'Done'
-    default:
-      return status
-  }
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  } catch {
-    return dateStr
-  }
-}
-
-function isOverdue(dateStr: string, status: TaskStatus): boolean {
-  if (status === 'done') return false
-  const due = new Date(dateStr)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return due < today
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
 }
 </script>

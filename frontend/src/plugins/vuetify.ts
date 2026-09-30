@@ -1,26 +1,22 @@
 import 'vuetify/styles'
 import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
 
 export default createVuetify({
-  components,
-  directives,
   theme: {
     defaultTheme: 'light',
     themes: {
       light: {
         dark: false,
         colors: {
-          primary: '#1976D2',
-          secondary: '#424242',
-          accent: '#82B1FF',
-          error: '#FF5252',
-          info: '#2196F3',
-          success: '#4CAF50',
-          warning: '#FFC107',
-          background: '#F5F5F7',
+          primary: '#2563EB',     // Modern Crisp Indigo/Blue
+          secondary: '#475569',   // Slate 600
+          accent: '#3B82F6',
+          error: '#EF4444',       // Rose Red
+          info: '#0EA5E9',        // Sky Blue
+          success: '#10B981',     // Emerald Green
+          warning: '#F59E0B',     // Amber
+          background: '#F8FAFC',  // Clean subtle light slate canvas
           surface: '#FFFFFF',
         },
       },

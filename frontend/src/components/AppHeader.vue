@@ -1,8 +1,11 @@
 <template>
-  <v-app-bar flat color="white" border="b" density="comfortable">
-    <v-container class="d-flex align-center py-0 px-4" fluid>
-      <v-icon color="primary" icon="mdi-checkbox-marked-circle-outline" class="mr-2" size="28" />
-      <v-app-bar-title class="font-weight-bold text-subtitle-1 text-md-h6">
+  <v-app-bar flat color="white" border="b" density="comfortable" class="px-2">
+    <v-container class="d-flex align-center py-0 px-2" fluid>
+      <v-avatar color="primary" size="32" class="mr-3" rounded="lg">
+        <v-icon color="white" icon="mdi-checkbox-marked-circle-outline" size="20" />
+      </v-avatar>
+
+      <v-app-bar-title class="font-weight-bold text-subtitle-1 text-md-h6 tracking-tight">
         Team Task Manager
       </v-app-bar-title>
 
@@ -10,6 +13,16 @@
 
       <template v-if="authStore.isAuthenticated && authStore.user">
         <div class="d-flex align-center ga-3">
+          <v-avatar
+            size="32"
+            :color="authStore.isAdmin ? 'deep-purple' : 'primary'"
+            class="d-none d-sm-flex"
+          >
+            <span class="text-caption text-white font-weight-bold">
+              {{ getUserInitials(authStore.user.name) }}
+            </span>
+          </v-avatar>
+
           <div class="d-flex flex-column text-right d-none d-sm-flex">
             <span class="text-body-2 font-weight-medium text-high-emphasis">
               {{ authStore.user.name }}
@@ -21,7 +34,7 @@
 
           <v-chip
             :color="authStore.isAdmin ? 'deep-purple' : 'teal'"
-            variant="flat"
+            variant="tonal"
             size="small"
             class="font-weight-bold text-uppercase"
           >
@@ -34,8 +47,8 @@
           <v-divider vertical class="mx-1 my-2" />
 
           <v-btn
-            color="error"
-            variant="tonal"
+            color="secondary"
+            variant="text"
             size="small"
             prepend-icon="mdi-logout"
             @click="handleLogout"
@@ -51,6 +64,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { getUserInitials } from '@/utils/task'
 
 const authStore = useAuthStore()
 const router = useRouter()

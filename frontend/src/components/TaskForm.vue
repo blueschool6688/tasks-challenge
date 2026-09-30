@@ -1,15 +1,15 @@
 <template>
   <v-dialog
     :model-value="modelValue"
-    max-width="600px"
+    max-width="580px"
     persistent
     @update:model-value="$emit('update:modelValue', $event)"
   >
-    <v-card rounded="lg" elevation="4">
+    <v-card rounded="lg" elevation="2">
       <v-card-item class="bg-primary text-white py-3 px-5">
         <div class="d-flex align-center justify-space-between w-100">
           <v-card-title class="text-h6 font-weight-bold d-flex align-center ga-2">
-            <v-icon :icon="isEditMode ? 'mdi-pencil-box' : 'mdi-plus-box'" />
+            <v-icon :icon="isEditMode ? 'mdi-pencil-box-outline' : 'mdi-plus-box-outline'" />
             {{ isEditMode ? 'Edit Task' : 'Create New Task' }}
           </v-card-title>
           <v-btn
@@ -27,19 +27,20 @@
           <v-text-field
             v-model="form.title"
             label="Title *"
-            placeholder="Enter task title"
+            placeholder="e.g. Design authentication workflow"
             variant="outlined"
             density="comfortable"
             :rules="[rules.required, rules.maxLength(255)]"
             prepend-inner-icon="mdi-format-title"
             class="mb-3"
             required
+            autofocus
           />
 
           <v-textarea
             v-model="form.description"
             label="Description"
-            placeholder="Provide task details or context"
+            placeholder="Add context, specifications, or acceptance criteria..."
             variant="outlined"
             density="comfortable"
             rows="3"
@@ -52,7 +53,7 @@
             <v-col cols="12" sm="6">
               <v-select
                 v-model="form.status"
-                :items="statusOptions"
+                :items="TASK_STATUS_OPTIONS"
                 item-title="title"
                 item-value="value"
                 label="Status *"
@@ -65,7 +66,7 @@
                 <template #item="{ props: itemProps, item }">
                   <v-list-item v-bind="itemProps">
                     <template #prepend>
-                      <v-icon :color="item.raw.color" size="18" class="mr-2">
+                      <v-icon :color="item.raw.color" size="16" class="mr-2">
                         mdi-circle
                       </v-icon>
                     </template>
@@ -106,7 +107,7 @@
             <template #item="{ props: itemProps, item }">
               <v-list-item v-bind="itemProps" :subtitle="item.raw.email">
                 <template #append>
-                  <v-chip size="x-small" :color="item.raw.role === 'admin' ? 'deep-purple' : 'grey'">
+                  <v-chip size="x-small" :color="item.raw.role === 'admin' ? 'deep-purple' : 'teal'" variant="tonal">
                     {{ item.raw.role }}
                   </v-chip>
                 </template>
@@ -147,6 +148,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
 import { useAuthStore } from '@/stores/auth'
+import { TASK_STATUS_OPTIONS } from '@/utils/task'
 import type { Task, TaskStatus, TaskFormPayload } from '@/types'
 
 const props = withDefaults(
@@ -171,13 +173,6 @@ const formRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null
 const isFormValid = ref<boolean>(false)
 
 const isEditMode = computed<boolean>(() => !!props.task?.id)
-
-const statusOptions = [
-  { title: 'To Do', value: 'todo' as TaskStatus, color: 'grey-darken-1' },
-  { title: 'In Progress', value: 'in_progress' as TaskStatus, color: 'blue' },
-  { title: 'Done', value: 'done' as TaskStatus, color: 'green' },
-]
-
 const userOptions = computed(() => taskStore.users)
 
 const form = reactive<{

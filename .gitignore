@@ -24,7 +24,11 @@ backend/bootstrap/cache/*
 
 # Frontend
 frontend/dist/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 # Misc
 *.log
 npm-debug.log*
+

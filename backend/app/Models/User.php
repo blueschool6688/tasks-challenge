@@ -61,7 +61,7 @@ class User extends Authenticatable
     /**
      * Check if user is an admin.
      */
-    public function isAdmin(): bool
+    public function isAdmin(): bool //this can use the lib spatie laravel permission to use trait UseRole
     {
         return $this->role === 'admin';
     }

@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import apiClient from '@/api/axios'
-import type { User, LoginCredentials, AuthResponse } from '@/types'
+import { authApi } from '@/api/auth.api'
+import { extractApiErrorMessage } from '@/utils/errors'
+import type { User, LoginCredentials } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -18,8 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     errorMessage.value = null
     try {
-      const response = await apiClient.post<AuthResponse>('/login', credentials)
-      const data = response.data
+      const data = await authApi.login(credentials)
 
       token.value = data.token
       user.value = data.user
@@ -29,21 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return true
     } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        err.response &&
-        typeof err.response === 'object' &&
-        'data' in err.response &&
-        err.response.data &&
-        typeof err.response.data === 'object' &&
-        'message' in err.response.data
-      ) {
-        errorMessage.value = String((err.response.data as { message: string }).message)
-      } else {
-        errorMessage.value = 'Failed to connect to authentication server.'
-      }
+      errorMessage.value = extractApiErrorMessage(err, 'Invalid credentials or server unavailable.')
       return false
     } finally {
       loading.value = false
@@ -53,10 +39,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout(): Promise<void> {
     try {
       if (token.value) {
-        await apiClient.post('/logout')
+        await authApi.logout()
       }
     } catch {
-      // Ignore network errors during logout
+      // Gracefully clear local session even if network logout fails
     } finally {
       token.value = null
       user.value = null
@@ -68,11 +54,11 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchCurrentUser(): Promise<void> {
     if (!token.value) return
     try {
-      const response = await apiClient.get<User>('/me')
-      user.value = response.data
-      localStorage.setItem('user', JSON.stringify(response.data))
+      const currentUser = await authApi.getCurrentUser()
+      user.value = currentUser
+      localStorage.setItem('user', JSON.stringify(currentUser))
     } catch {
-      logout()
+      await logout()
     }
   }
 

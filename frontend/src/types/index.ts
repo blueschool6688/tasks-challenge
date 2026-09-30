@@ -2,6 +2,10 @@ export type UserRole = 'admin' | 'user'
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done'
 
+export type TaskSortField = 'id' | 'title' | 'status' | 'due_date' | 'created_at' | 'updated_at'
+
+export type SortOrder = 'asc' | 'desc'
+
 export interface User {
   id: number
   name: string
@@ -66,6 +70,6 @@ export interface TaskFilterParams {
   search?: string
   page?: number
   per_page?: number
-  sort_by?: string
-  sort_order?: 'asc' | 'desc'
+  sort_by?: TaskSortField
+  sort_order?: SortOrder
 }
