@@ -7,15 +7,15 @@
 **Description:** Initialize a git repository, create a Laravel 11 project in `backend/`, configure SQLite database, install Sanctum, and set up CORS for the Vue SPA dev server.
 
 **Acceptance criteria:**
-- [ ] Git repo initialized with `.gitignore`
-- [ ] Laravel 11 installed in `backend/` with SQLite configured in `.env`
-- [ ] Sanctum installed and configured
-- [ ] CORS configured to allow `http://localhost:5173`
-- [ ] `php artisan serve` starts without errors
+- [x] Git repo initialized with `.gitignore`
+- [x] Laravel 11 installed in `backend/` with SQLite configured in `.env`
+- [x] Sanctum installed and configured
+- [x] CORS configured to allow `http://localhost:5173`
+- [x] `php artisan serve` starts without errors
 
 **Verification:**
-- [ ] `php artisan serve` runs and returns Laravel welcome at `http://localhost:8000`
-- [ ] `php artisan sanctum:prune-expired` runs without error (Sanctum installed)
+- [x] `php artisan serve` runs and returns Laravel welcome at `http://localhost:8000`
+- [x] `php artisan sanctum:prune-expired` runs without error (Sanctum installed)
 
 **Dependencies:** None
 
@@ -34,16 +34,16 @@
 **Description:** Create migrations for `users` (add `role` column) and `tasks` tables. Update the User model with `role` enum cast and `tasks()` relationship. Create the Task model with `status` enum cast, `SoftDeletes`, and `user()` relationship.
 
 **Acceptance criteria:**
-- [ ] `users` table has `role` column (string, default 'user')
-- [ ] `tasks` table has `title`, `description`, `status`, `assigned_to`, `due_date`, `deleted_at` columns
-- [ ] `tasks.assigned_to` has foreign key to `users.id`
-- [ ] User model: `role` cast to string, `tasks()` hasMany relationship
-- [ ] Task model: `status` cast, `SoftDeletes` trait, `user()` belongsTo relationship, `$fillable` set
+- [x] `users` table has `role` column (string, default 'user')
+- [x] `tasks` table has `title`, `description`, `status`, `assigned_to`, `due_date`, `deleted_at` columns
+- [x] `tasks.assigned_to` has foreign key to `users.id`
+- [x] User model: `role` cast to string, `tasks()` hasMany relationship
+- [x] Task model: `status` cast, `SoftDeletes` trait, `user()` belongsTo relationship, `$fillable` set
 
 **Verification:**
-- [ ] `php artisan migrate` runs without errors
-- [ ] `php artisan migrate:rollback` and re-migrate succeeds
-- [ ] Schema inspection shows correct columns and constraints
+- [x] `php artisan migrate` runs without errors
+- [x] `php artisan migrate:rollback` and re-migrate succeeds
+- [x] Schema inspection shows correct columns and constraints
 
 **Dependencies:** Task 1
 
@@ -62,15 +62,15 @@
 **Description:** Create a DatabaseSeeder that creates 3 users (admin@example.com as admin, john@example.com and jane@example.com as users) and 10-15 sample tasks with varied statuses distributed across users.
 
 **Acceptance criteria:**
-- [ ] `admin@example.com` created with role=admin, password=password
-- [ ] `john@example.com` and `jane@example.com` created with role=user, password=password
-- [ ] 10-15 tasks created with mixed statuses (todo/in_progress/done)
-- [ ] Tasks distributed across all 3 users
-- [ ] Some tasks have due_date, some null
+- [x] `admin@example.com` created with role=admin, password=password
+- [x] `john@example.com` and `jane@example.com` created with role=user, password=password
+- [x] 10-15 tasks created with mixed statuses (todo/in_progress/done)
+- [x] Tasks distributed across all 3 users
+- [x] Some tasks have due_date, some null
 
 **Verification:**
-- [ ] `php artisan migrate:fresh --seed` runs without errors
-- [ ] Database contains 3 users and 10-15 tasks
+- [x] `php artisan migrate:fresh --seed` runs without errors
+- [x] Database contains 3 users and 10-15 tasks
 
 **Dependencies:** Task 2
 
@@ -82,9 +82,9 @@
 ---
 
 ## Checkpoint: Foundation
-- [ ] `php artisan migrate:fresh --seed` succeeds
-- [ ] 3 users + 10-15 tasks in database
-- [ ] Models have correct relationships
+- [x] `php artisan migrate:fresh --seed` succeeds
+- [x] 3 users + 10-15 tasks in database
+- [x] Models have correct relationships
 
 ---
 
