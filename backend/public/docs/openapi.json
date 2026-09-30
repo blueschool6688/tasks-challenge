@@ -11,7 +11,11 @@
   "servers": [
     {
       "url": "http://localhost:8000",
-      "description": "Local Development Server"
+      "description": "Local Development Server (supports /api and /api/v1)"
+    },
+    {
+      "url": "http://localhost:8000/api/v1",
+      "description": "RESTful API v1 Server"
     }
   ],
   "tags": [

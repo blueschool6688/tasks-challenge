@@ -23,7 +23,9 @@ class TaskController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $user = $request->user();
-        $query = Task::with('assignee');
+        $query = Task::query()
+            ->select(['id', 'title', 'description', 'status', 'assigned_to', 'due_date', 'created_at', 'updated_at'])
+            ->with('assignee:id,name,email,role');
 
         // Role-based scoping
         if (! $user->isAdmin()) {

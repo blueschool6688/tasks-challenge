@@ -12,23 +12,27 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group.
+| API routes follow RESTful URI versioning standards (/api/v1/...).
+| Unversioned endpoints (/api/...) are preserved as aliases for
+| backward compatibility and seamless client integration.
 |
 */
 
-// Public routes
-Route::post('/login', [AuthController::class, 'login']);
+$registerRoutes = function (): void {
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
 
-// Protected routes (Sanctum)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
+    // Protected routes (Sanctum)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AuthController::class, 'me']);
 
-    // Users list for assignee selection
-    Route::get('/users', [UserController::class, 'index']);
+        // Users list for assignee selection
+        Route::get('/users', [UserController::class, 'index']);
 
-    // Task CRUD endpoints
-    Route::apiResource('tasks', TaskController::class);
-});
+        // Task CRUD endpoints
+        Route::apiResource('tasks', TaskController::class);
+    });
+};
+
+Route::prefix('v1')->group($registerRoutes);
+$registerRoutes();
