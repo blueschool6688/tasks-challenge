@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class MillionTasksSeeder extends Seeder
 {
-    public function run(int $total = 1000000, bool $fresh = false): void
+    public function run(int $total = 10000, bool $fresh = false): void
     {
         ini_set('memory_limit', '-1');
         DB::disableQueryLog();

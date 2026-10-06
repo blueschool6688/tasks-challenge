@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
             $table->enum('status', ['todo', 'in_progress', 'done'])->default('todo');
-            $table->foreignId('assigned_to')->constrained('users')->restrictOnDelete();
+            $table->unsignedBigInteger('assigned_to');
             $table->date('due_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
