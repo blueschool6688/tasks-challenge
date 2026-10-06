@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,13 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // 401: Unauthenticated
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             return response()->json([
                 'message' => 'Unauthenticated.',
             ], 401);
         });
 
-        $exceptions->render(function (AuthorizationException $e, Request $request) {
+        // 403: Forbidden (AccessDeniedHttpException or AuthorizationException)
+        $exceptions->render(function (AccessDeniedHttpException|AuthorizationException $e, Request $request) {
             return response()->json([
                 'message' => $e->getMessage() ?: 'This action is unauthorized.',
             ], 403);
