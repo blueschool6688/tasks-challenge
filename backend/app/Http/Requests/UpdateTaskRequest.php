@@ -39,6 +39,28 @@ class UpdateTaskRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     *
+     * Sanitize user input by stripping HTML tags and trimming whitespace.
+     */
+    protected function prepareForValidation(): void
+    {
+        $sanitized = [];
+
+        if ($this->has('title') && is_string($this->input('title'))) {
+            $sanitized['title'] = trim(strip_tags($this->input('title')));
+        }
+
+        if ($this->has('description') && is_string($this->input('description'))) {
+            $sanitized['description'] = trim(strip_tags($this->input('description')));
+        }
+
+        if (! empty($sanitized)) {
+            $this->merge($sanitized);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>

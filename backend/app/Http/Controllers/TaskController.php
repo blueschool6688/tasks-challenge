@@ -42,11 +42,14 @@ class TaskController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = (string) $request->query('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
+            $rawSearch = trim(strip_tags((string) $request->query('search')));
+            if ($rawSearch !== '') {
+                $escapedSearch = addcslashes($rawSearch, '%_\\');
+                $query->where(function ($q) use ($escapedSearch) {
+                    $q->where('title', 'like', "%{$escapedSearch}%")
+                        ->orWhere('description', 'like', "%{$escapedSearch}%");
+                });
+            }
         }
 
         $sortBy = (string) $request->query('sort_by', 'created_at');
@@ -69,17 +72,10 @@ class TaskController extends Controller
         $perPage = max(1, min(100, $perPage));
         $page = max(1, (int) $request->query('page', 1));
 
-        if ($request->query('pagination') === 'simple') {
-            $tasks = $query->simplePaginate($perPage);
-            return TaskResource::collection($tasks)
-                ->response()
-                ->header('X-Cache', 'BYPASS');
-        }
-
         $normalizedFilters = [
             'assigned_to' => ! $user->isAdmin() ? $user->id : ($request->filled('assigned_to') ? (int) $request->query('assigned_to') : null),
             'status' => $request->filled('status') ? (string) $request->query('status') : null,
-            'search' => $request->filled('search') ? trim((string) $request->query('search')) : null,
+            'search' => $request->filled('search') ? trim(strip_tags((string) $request->query('search'))) : null,
         ];
 
         $total = $this->cacheService->rememberTotalCount($scope, $normalizedFilters, function () use ($query): int {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Services\TaskCacheService;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Task extends Model
 {
     use HasFactory, SoftDeletes;
+
+    /**
+     * Sanitize title attribute to prevent Stored XSS.
+     */
+    protected function title(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? trim(strip_tags($value)) : null,
+        );
+    }
+
+    /**
+     * Sanitize description attribute to prevent Stored XSS.
+     */
+    protected function description(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? trim(strip_tags($value)) : null,
+        );
+    }
 
     /**
      * The "booted" method of the model.
