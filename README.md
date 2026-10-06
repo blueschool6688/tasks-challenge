@@ -8,6 +8,7 @@ A production-ready, enterprise-grade task management web application built with 
 
 - [Overview & Architecture](#-overview--architecture)
 - [Tech Stack](#-tech-stack)
+- [Workflows & Development Lifecycle](#-workflows--development-lifecycle)
 - [Development Environment Setup & Run Guide](#-development-environment-setup--run-guide)
 - [Production Deployment & Build Guide](#-production-deployment--build-guide)
 - [Demo Accounts](#-demo-accounts)
@@ -107,19 +108,19 @@ The repository includes a comprehensive, cross-platform [`Makefile`](file:///c:/
 
 ### Step 1: Initial Setup (Dependencies + Database)
 
-#### Cách 1: Tự động 1 bước qua Makefile (Khuyến nghị)
+#### Option 1: Automated One-Step Setup via Makefile (Recommended)
 ```bash
 make setup
 ```
-Lệnh này sẽ tự động:
-1. Cài đặt các gói PHP (`composer install` trong `backend/`)
-2. Cài đặt các gói Node (`npm install` trong `frontend/`)
-3. Tạo file `backend/.env` từ `.env.example` và generate application key
-4. Chạy migration tạo bảng SQLite kèm composite performance indexes và nạp dữ liệu mẫu (Seeder: 3 users, 12 tasks)
+This command automatically:
+1. Installs PHP dependencies (`composer install` in `backend/`)
+2. Installs Node dependencies (`npm install` in `frontend/`)
+3. Copies `backend/.env.example` to `backend/.env` and generates the application encryption key
+4. Executes SQLite database migrations with composite performance indexes and seeds initial test data (3 users, 12 tasks)
 
-#### Cách 2: Thiết lập thủ công từng phần
+#### Option 2: Manual Step-by-Step Setup
 ```bash
-# 1. Cài đặt Backend
+# 1. Backend Setup
 cd backend
 composer install
 cp .env.example .env
@@ -127,7 +128,7 @@ php artisan key:generate
 php artisan migrate:fresh --seed
 cd ..
 
-# 2. Cài đặt Frontend
+# 2. Frontend Setup
 cd frontend
 npm install
 cd ..
@@ -135,44 +136,44 @@ cd ..
 
 ---
 
-### Step 2: Khởi chạy môi trường Development
+### Step 2: Running the Development Environment
 
-Có 3 lựa chọn để khởi chạy môi trường dev tùy theo thói quen và môi trường máy của bạn:
+Choose one of the following 3 options based on your workflow and preferences:
 
-#### Lựa chọn A: Chạy đồng thời 2 service trong 1 Terminal duy nhất (Tiện lợi nhất)
+#### Option A: Run Both Services Concurrently in a Single Terminal (Most Convenient)
 ```bash
 make dev
-# hoặc chạy qua npm:
+# or run via npm:
 npm run dev
 ```
-Hệ thống sẽ chạy song song:
-- **Backend API:** `http://localhost:8000` (hiển thị tag `[BACKEND]` màu xanh dương)
-- **Frontend SPA:** `http://localhost:5173` (hiển thị tag `[FRONTEND]` màu xanh lá)
-- Nhấn `Ctrl + C` để dừng đồng thời cả 2 service an toàn.
+This concurrently starts:
+- **Backend API:** `http://localhost:8000` (tagged `[BACKEND]` in cyan/blue)
+- **Frontend SPA:** `http://localhost:5173` (tagged `[FRONTEND]` in green)
+- Press `Ctrl + C` to gracefully terminate both services simultaneously.
 
-#### Lựa chọn B: Mở 2 Tab Terminal độc lập
+#### Option B: Run in Separate Terminal Tabs
 - **Terminal 1 (Backend API):**
   ```bash
   cd backend
   php artisan serve --host=127.0.0.1 --port=8000
   ```
-  *(Truy cập Swagger Docs tại: `http://localhost:8000/docs`)*
+  *(Access Swagger Docs at: `http://localhost:8000/docs`)*
 
 - **Terminal 2 (Frontend SPA):**
   ```bash
   cd frontend
   npm run dev
   ```
-  *(Truy cập ứng dụng tại: `http://localhost:5173`)*
+  *(Access web application at: `http://localhost:5173`)*
 
-#### Lựa chọn C: Chạy qua Virtual Host của Laragon
-Nếu bạn sử dụng Laragon với Apache/Nginx:
-1. Laragon tự động ánh xạ host ảo: `http://tasks-challenge.test` trỏ vào `backend/public`.
-2. Tạo file `frontend/.env` (nếu chưa có):
+#### Option C: Run via Laragon Virtual Host (Windows)
+If you are using Laragon with Apache/Nginx:
+1. Laragon automatically provisions the virtual host: `http://tasks-challenge.test` pointing to `backend/public`.
+2. Create or update `frontend/.env`:
    ```env
    VITE_API_URL=http://tasks-challenge.test/api/v1
    ```
-3. Chạy frontend dev server:
+3. Run the frontend dev server:
    ```bash
    cd frontend && npm run dev
    ```
@@ -182,57 +183,57 @@ Nếu bạn sử dụng Laragon với Apache/Nginx:
 ## 🚀 Production Deployment & Build Guide
 
 ### Step 1: Build Production Frontend SPA
-Frontend được đóng gói thành các file tĩnh HTML/CSS/JS được tối ưu hóa tối đa, bẻ nhỏ chunk và bật tree-shaking:
+The frontend SPA is compiled into optimized static HTML/CSS/JS assets with code splitting and tree-shaking:
 
 ```bash
-# Cách 1: Dùng Makefile
+# Option 1: Using Makefile
 make build-frontend
 
-# Cách 2: Chạy trực tiếp qua NPM
+# Option 2: Using NPM directly
 cd frontend
 npm run build
 ```
-Toàn bộ mã nguồn đã build sẽ nằm tại thư mục: **`frontend/dist/`** (chỉ ~321 kB bundle chính).
+All compiled production assets are emitted to **`frontend/dist/`** (~321 kB main bundle).
 
-Để xem trước (preview) bản build production trên cổng 4173:
+To preview the production build locally on port 4173:
 ```bash
 make preview
-# hoặc: cd frontend && npm run preview
+# or: cd frontend && npm run preview
 ```
 
 ---
 
-### Step 2: Tối ưu hóa Backend Laravel cho Production
+### Step 2: Optimize Laravel Backend for Production
 
-Khi deploy lên môi trường Production thực tế (Server Linux/Ubuntu, Docker, hoặc Cloud VPS):
+When deploying to a production server (Linux/Ubuntu, Docker, or Cloud VPS):
 
 ```bash
 cd backend
 
-# 1. Cài đặt Composer không kèm dev dependencies & tối ưu autoload
+# 1. Install Composer dependencies without dev packages & optimize autoloader
 composer install --no-dev --optimize-autoloader
 
-# 2. Cấu hình .env Production
-# Đổi APP_ENV=production, APP_DEBUG=false, và cấu hình MySQL / PostgreSQL nếu dùng
-# Đảm bảo cấu hình CORS: FRONTEND_URL=https://your-frontend-domain.com
+# 2. Configure production .env
+# Set APP_ENV=production, APP_DEBUG=false, and configure MySQL / PostgreSQL if needed
+# Ensure CORS configuration: FRONTEND_URL=https://your-frontend-domain.com
 
-# 3. Chạy migration sản xuất
+# 3. Run production database migrations
 php artisan migrate --force
 
-# 4. Cache toàn bộ cấu hình, routes, và events để đạt hiệu năng tối đa
+# 4. Cache configurations, routes, views, and events for maximum throughput
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 ```
 
-*(Hoặc dùng lệnh ngắn gọn từ root: `make build-backend`)*.
+*(Or use the root Makefile shortcut: `make build-backend`)*.
 
 ---
 
-### Step 3: Cấu hình Web Server Phục vụ Production (Nginx)
+### Step 3: Production Web Server Configuration (Nginx)
 
-Dưới đây là file cấu hình mẫu chuẩn `nginx.conf` phục vụ cả Frontend SPA (Static Files) và Backend Laravel API trên cùng 1 domain:
+Below is a standard production-ready `nginx.conf` sample configuration serving both the Frontend SPA (static assets) and Backend Laravel API under a single domain:
 
 ```nginx
 server {
@@ -241,16 +242,16 @@ server {
     root /var/www/tasks-challenge/frontend/dist;
     index index.html;
 
-    # Gzip Compression tối ưu tốc độ tải
+    # Gzip compression for optimal delivery speed
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
-    # 1. Frontend SPA: chuyển hướng tất cả route về index.html để Vue Router xử lý
+    # 1. Frontend SPA: route all non-file requests to index.html for Vue Router
     location / {
         try_files $uri $uri/ /index.html;
     }
 
-    # 2. Backend API: chuyển tiếp các request /api sang Laravel backend/public
+    # 2. Backend API: forward /api requests to Laravel backend/public
     location ^~ /api {
         root /var/www/tasks-challenge/backend/public;
         try_files $uri $uri/ /index.php?$query_string;
