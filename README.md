@@ -91,6 +91,7 @@ The repository includes a comprehensive, cross-platform [`Makefile`](file:///c:/
 | `make test-frontend` | Runs `vue-tsc -b` strict type check across the frontend. |
 | `make format` | Automatically formats backend code to PSR-12 / Laravel standards using Laravel Pint. |
 | `make build` | Builds the production-ready frontend bundle into `frontend/dist/` and caches Laravel configurations. |
+| `make seed-million` | Seeds 1,000,000 tasks for performance benchmarking and stress testing. |
 | `make clean` | Purges build artifacts, application cache, route cache, and view cache. |
 
 ---

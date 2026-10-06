@@ -1,40 +1,42 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 
+interface CustomRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean
+}
+
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
   withCredentials: true,
+  withXSRFToken: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
 })
 
-// Request interceptor: attach Sanctum Bearer token from localStorage
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error: unknown) => {
-    return Promise.reject(error)
-  }
-)
-
-// Response interceptor: handle 401 unauthenticated automatically
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      // Clear invalid credentials and redirect to login if not already there
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+  async (error: unknown) => {
+    if (axios.isAxiosError(error) && error.config) {
+      const config = error.config as CustomRequestConfig
+      const status = error.response?.status
+      if (status === 419 && !config._retry) {
+        config._retry = true
+        try {
+          await axios.get('/sanctum/csrf-cookie', { withCredentials: true })
+          return apiClient(config)
+        } catch (csrfError: unknown) {
+          return Promise.reject(csrfError)
+        }
+      }
+      if (status === 401 && !config.url?.includes('/login')) {
+        window.dispatchEvent(new CustomEvent('app:unauthorized'))
       }
     }
+
     return Promise.reject(error)
   }
 )

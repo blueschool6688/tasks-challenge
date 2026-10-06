@@ -166,8 +166,11 @@ const emit = defineEmits<{
   (e: 'saved'): void
 }>()
 
+import { useNotificationStore } from '@/stores/notification'
+
 const taskStore = useTaskStore()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 const formRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
 const isFormValid = ref<boolean>(false)
@@ -230,7 +233,7 @@ async function submitForm(): Promise<void> {
   }
 
   if (form.assigned_to === null) {
-    taskStore.notify('Please select an assignee.', 'error')
+    notificationStore.notify('Please select an assignee.', 'error')
     return
   }
 

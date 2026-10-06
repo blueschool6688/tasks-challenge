@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\TaskCacheService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Task extends Model
 {
     use HasFactory, SoftDeletes;
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        $bumpVersion = static function (): void {
+            app(TaskCacheService::class)->incrementTasksVersion();
+        };
+
+        static::created($bumpVersion);
+        static::updated($bumpVersion);
+        static::deleted($bumpVersion);
+        static::restored($bumpVersion);
+        static::forceDeleted($bumpVersion);
+    }
 
     /**
      * The attributes that are mass assignable.

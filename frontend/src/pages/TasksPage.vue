@@ -101,13 +101,30 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Loading State -->
-          <tr v-if="taskStore.loading && taskStore.tasks.length === 0">
-            <td colspan="5" class="text-center py-10">
-              <v-progress-circular indeterminate color="primary" size="44" />
-              <div class="text-caption text-medium-emphasis mt-2">Loading tasks...</div>
-            </td>
-          </tr>
+          <!-- Loading State Skeleton -->
+          <template v-if="taskStore.loading">
+            <tr v-for="i in 5" :key="'skeleton-' + i">
+              <td class="py-3">
+                <v-skeleton-loader type="text" width="60%" class="mb-1" />
+                <v-skeleton-loader type="text" width="85%" />
+              </td>
+              <td>
+                <div class="d-flex align-center ga-2">
+                  <v-skeleton-loader type="avatar" size="28" />
+                  <v-skeleton-loader type="text" width="90px" />
+                </div>
+              </td>
+              <td>
+                <v-skeleton-loader type="chip" width="80px" />
+              </td>
+              <td>
+                <v-skeleton-loader type="text" width="90px" />
+              </td>
+              <td class="text-right pr-6">
+                <v-skeleton-loader type="actions" width="70px" class="d-inline-block" />
+              </td>
+            </tr>
+          </template>
 
           <!-- Empty State -->
           <tr v-else-if="taskStore.tasks.length === 0">
@@ -124,6 +141,7 @@
           </tr>
 
           <!-- Task Rows -->
+          <template v-else>
           <tr v-for="task in taskStore.tasks" :key="task.id">
             <!-- Title & Description -->
             <td class="py-3">
@@ -211,6 +229,7 @@
               />
             </td>
           </tr>
+          </template>
         </tbody>
       </v-table>
 

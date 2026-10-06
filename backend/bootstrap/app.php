@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prependToGroup('api', \App\Http\Middleware\AuthenticateWithCookieToken::class);
         // Pure REST API: never redirect unauthenticated guests to HTML blade page
         $middleware->redirectGuestsTo(fn () => null);
     })

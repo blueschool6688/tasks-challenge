@@ -7,7 +7,8 @@ import type { User, LoginCredentials, AuthResponse } from '@/types'
  */
 export const authApi = {
   /**
-   * Authenticate with email and password to retrieve a Sanctum bearer token.
+   * Authenticate with email and password.
+   * Sanctum personal access token is stored automatically in an HttpOnly cookie by backend.
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/login', credentials)

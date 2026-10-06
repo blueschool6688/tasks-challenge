@@ -10,8 +10,8 @@
 
     <!-- Global Feedback Notification Snackbar -->
     <v-snackbar
-      v-model="taskStore.snackbar.show"
-      :color="taskStore.snackbar.color"
+      v-model="notificationStore.snackbar.show"
+      :color="notificationStore.snackbar.color"
       timeout="3500"
       location="top right"
       rounded="lg"
@@ -19,11 +19,11 @@
     >
       <div class="d-flex align-center ga-2">
         <v-icon
-          :icon="taskStore.snackbar.color === 'error' ? 'mdi-alert-circle' : 'mdi-check-circle'"
+          :icon="notificationStore.snackbar.color === 'error' ? 'mdi-alert-circle' : 'mdi-check-circle'"
           size="20"
         />
         <span class="text-body-2 font-weight-medium">
-          {{ taskStore.snackbar.text }}
+          {{ notificationStore.snackbar.text }}
         </span>
       </div>
       <template #actions>
@@ -32,7 +32,7 @@
           variant="text"
           density="compact"
           icon="mdi-close"
-          @click="taskStore.snackbar.show = false"
+          @click="notificationStore.close"
         />
       </template>
     </v-snackbar>
@@ -40,18 +40,30 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
 import { useAuthStore } from '@/stores/auth'
-import { useTaskStore } from '@/stores/tasks'
+import { useNotificationStore } from '@/stores/notification'
 
+const router = useRouter()
 const authStore = useAuthStore()
-const taskStore = useTaskStore()
+const notificationStore = useNotificationStore()
+
+function handleUnauthorizedEvent(): void {
+  authStore.handleUnauthorized()
+  router.push({ name: 'Login' })
+}
 
 onMounted(async () => {
-  if (authStore.token && !authStore.user) {
-    await authStore.fetchCurrentUser()
+  window.addEventListener('app:unauthorized', handleUnauthorizedEvent)
+  if (!authStore.isInitialized) {
+    await authStore.init()
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('app:unauthorized', handleUnauthorizedEvent)
 })
 </script>
 

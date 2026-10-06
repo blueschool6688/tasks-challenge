@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\TaskCacheService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -13,6 +14,19 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        $bumpUsersVersion = static function (): void {
+            app(TaskCacheService::class)->incrementUsersVersion();
+        };
+
+        static::saved($bumpUsersVersion);
+        static::deleted($bumpUsersVersion);
+    }
 
     /**
      * The attributes that are mass assignable.

@@ -16,15 +16,15 @@
       <v-card-text class="pt-3">
         <!-- Error Alert -->
         <v-alert
-          v-if="authStore.errorMessage"
+          v-if="errorMessage"
           type="error"
           variant="tonal"
           closable
           density="comfortable"
           class="mb-4"
-          @click:close="authStore.errorMessage = null"
+          @click:close="errorMessage = null"
         >
-          {{ authStore.errorMessage }}
+          {{ errorMessage }}
         </v-alert>
 
         <v-form ref="loginForm" v-model="isValid" @submit.prevent="handleLogin">
@@ -118,6 +118,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { extractApiErrorMessage } from '@/utils/errors'
 import type { LoginCredentials } from '@/types'
 
 const authStore = useAuthStore()
@@ -126,6 +127,7 @@ const router = useRouter()
 const loginForm = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
 const isValid = ref<boolean>(false)
 const showPassword = ref<boolean>(false)
+const errorMessage = ref<string | null>(null)
 
 const credentials = reactive<LoginCredentials>({
   email: 'admin@example.com',
@@ -141,7 +143,7 @@ const rules = {
 function fillCredentials(email: string, pass: string): void {
   credentials.email = email
   credentials.password = pass
-  authStore.errorMessage = null
+  errorMessage.value = null
 }
 
 async function handleLogin(): Promise<void> {
@@ -150,9 +152,12 @@ async function handleLogin(): Promise<void> {
     if (!valid) return
   }
 
-  const success = await authStore.login(credentials)
-  if (success) {
+  errorMessage.value = null
+  try {
+    await authStore.login(credentials)
     router.push('/tasks')
+  } catch (err: unknown) {
+    errorMessage.value = extractApiErrorMessage(err, 'Invalid credentials or server unavailable.')
   }
 }
 </script>

@@ -30,8 +30,13 @@ const router = createRouter({
 })
 
 // Navigation Guard
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+
+  // Ensure session is checked from backend cookies before evaluating route permissions
+  if (!authStore.isInitialized) {
+    await authStore.init()
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'Login' })

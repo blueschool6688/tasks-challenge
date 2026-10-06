@@ -91,6 +91,11 @@ seed: ## Run database seeder (idempotent)
 	@echo "Seeding database..."
 	cd backend && $(PHP) artisan db:seed --force
 
+.PHONY: seed-million
+seed-million: ## Seed 1,000,000 tasks for performance benchmarking
+	@echo "Seeding 1,000,000 tasks for performance benchmarking..."
+	cd backend && $(PHP) artisan tasks:seed-million
+
 # ------------------------------------------------------------------------------
 # 4. Testing & Quality Assurance
 # ------------------------------------------------------------------------------

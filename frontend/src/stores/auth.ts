@@ -1,76 +1,83 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi } from '@/api/auth.api'
-import { extractApiErrorMessage } from '@/utils/errors'
 import type { User, LoginCredentials } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('token'))
-  const user = ref<User | null>(
-    localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') as string) : null
-  )
-  const loading = ref<boolean>(false)
-  const errorMessage = ref<string | null>(null)
+  // Purge any legacy stateless tokens left in the browser's localStorage
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+  }
 
-  const isAuthenticated = computed<boolean>(() => !!token.value && !!user.value)
+  const user = ref<User | null>(null)
+  const isInitialized = ref<boolean>(false)
+  const loading = ref<boolean>(false)
+
+  const isAuthenticated = computed<boolean>(() => !!user.value)
   const isAdmin = computed<boolean>(() => user.value?.role === 'admin')
 
-  async function login(credentials: LoginCredentials): Promise<boolean> {
+  /**
+   * Hydrate auth state from the backend session cookie on app initialization.
+   */
+  async function init(): Promise<void> {
+    if (isInitialized.value) return
+
+    try {
+      const currentUser = await authApi.getCurrentUser()
+      user.value = currentUser
+    } catch {
+      user.value = null
+    } finally {
+      isInitialized.value = true
+    }
+  }
+
+  /**
+   * Log in via stateful cookie session.
+   * Throws on error so the caller component can display local error feedback.
+   */
+  async function login(credentials: LoginCredentials): Promise<void> {
     loading.value = true
-    errorMessage.value = null
     try {
       const data = await authApi.login(credentials)
-
-      token.value = data.token
       user.value = data.user
-
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-
-      return true
-    } catch (err: unknown) {
-      errorMessage.value = extractApiErrorMessage(err, 'Invalid credentials or server unavailable.')
-      return false
     } finally {
       loading.value = false
     }
   }
 
+  /**
+   * Log out and terminate the backend session.
+   */
   async function logout(): Promise<void> {
+    loading.value = true
     try {
-      if (token.value) {
-        await authApi.logout()
-      }
+      await authApi.logout()
     } catch {
-      // Gracefully clear local session even if network logout fails
+      // Gracefully clear local memory even if network call fails
     } finally {
-      token.value = null
       user.value = null
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      loading.value = false
     }
   }
 
-  async function fetchCurrentUser(): Promise<void> {
-    if (!token.value) return
-    try {
-      const currentUser = await authApi.getCurrentUser()
-      user.value = currentUser
-      localStorage.setItem('user', JSON.stringify(currentUser))
-    } catch {
-      await logout()
-    }
+  /**
+   * Reset user state when 401 occurs.
+   */
+  function handleUnauthorized(): void {
+    user.value = null
   }
 
   return {
-    token,
     user,
+    isInitialized,
     loading,
-    errorMessage,
     isAuthenticated,
     isAdmin,
+    init,
     login,
     logout,
-    fetchCurrentUser,
+    handleUnauthorized,
   }
 })

@@ -8,38 +8,39 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
+use App\Services\TaskCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class TaskController extends Controller
 {
-    /**
-     * Display a listing of the tasks.
-     *
-     * Admin: sees all tasks (can filter by assigned_to, status, search).
-     * Regular User: scoped only to tasks assigned to themselves.
-     */
-    public function index(Request $request): AnonymousResourceCollection
+    public function __construct(
+        private readonly TaskCacheService $cacheService
+    ) {}
+
+
+    public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $query = Task::query()
             ->select(['id', 'title', 'description', 'status', 'assigned_to', 'due_date', 'created_at', 'updated_at'])
             ->with('assignee:id,name,email,role');
 
-        // Role-based scoping
+        $scope = $user->isAdmin() ? 'all' : 'u' . $user->id;
+
         if (! $user->isAdmin()) {
             $query->where('assigned_to', $user->id);
         } elseif ($request->filled('assigned_to')) {
-            $query->where('assigned_to', $request->query('assigned_to'));
+            $query->where('assigned_to', (int) $request->query('assigned_to'));
         }
 
-        // Status filter (?status=todo|in_progress|done)
         if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
+            $query->where('status', (string) $request->query('status'));
         }
 
-        // Search by title or description (?search=...)
         if ($request->filled('search')) {
             $search = (string) $request->query('search');
             $query->where(function ($q) use ($search) {
@@ -48,23 +49,69 @@ class TaskController extends Controller
             });
         }
 
-        // Sorting
         $sortBy = (string) $request->query('sort_by', 'created_at');
         $sortOrder = strtolower((string) $request->query('sort_order', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $allowedSorts = ['id', 'title', 'status', 'due_date', 'created_at', 'updated_at'];
+        $allowedSorts = ['id', 'created_at', 'due_date', 'status'];
         if (in_array($sortBy, $allowedSorts, true)) {
             $query->orderBy($sortBy, $sortOrder);
         } else {
+            $sortBy = 'created_at';
+            $sortOrder = 'desc';
             $query->orderBy('created_at', 'desc');
+        }
+
+        if ($sortBy !== 'id') {
+            $query->orderBy('id', $sortOrder);
         }
 
         $perPage = (int) $request->query('per_page', 10);
         $perPage = max(1, min(100, $perPage));
+        $page = max(1, (int) $request->query('page', 1));
 
-        $tasks = $query->paginate($perPage);
+        if ($request->query('pagination') === 'simple') {
+            $tasks = $query->simplePaginate($perPage);
+            return TaskResource::collection($tasks)
+                ->response()
+                ->header('X-Cache', 'BYPASS');
+        }
 
-        return TaskResource::collection($tasks);
+        $normalizedFilters = [
+            'assigned_to' => ! $user->isAdmin() ? $user->id : ($request->filled('assigned_to') ? (int) $request->query('assigned_to') : null),
+            'status' => $request->filled('status') ? (string) $request->query('status') : null,
+            'search' => $request->filled('search') ? trim((string) $request->query('search')) : null,
+        ];
+
+        $total = $this->cacheService->rememberTotalCount($scope, $normalizedFilters, function () use ($query): int {
+            return (clone $query)->count();
+        });
+
+        $items = $this->cacheService->rememberPageItems(
+            $scope,
+            $normalizedFilters,
+            $page,
+            $perPage,
+            $sortBy,
+            $sortOrder,
+            function () use ($query, $page, $perPage) {
+                return $query->forPage($page, $perPage)->get();
+            }
+        );
+
+        $paginator = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+            ]
+        );
+
+        return TaskResource::collection($paginator)
+            ->response()
+            ->header('X-Cache', $this->cacheService->wasCacheHit() ? 'HIT' : 'MISS');
     }
 
     /**

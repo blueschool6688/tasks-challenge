@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { tasksApi } from '@/api/tasks.api'
 import { authApi } from '@/api/auth.api'
+import { useNotificationStore } from '@/stores/notification'
 import { extractApiErrorMessage } from '@/utils/errors'
 import type {
   Task,
@@ -11,13 +12,9 @@ import type {
   PaginationMeta,
 } from '@/types'
 
-export interface NotificationState {
-  show: boolean
-  text: string
-  color: 'success' | 'error' | 'info' | 'warning'
-}
-
 export const useTaskStore = defineStore('tasks', () => {
+  const notificationStore = useNotificationStore()
+
   const tasks = ref<Task[]>([])
   const users = ref<User[]>([])
   const loading = ref<boolean>(false)
@@ -31,7 +28,7 @@ export const useTaskStore = defineStore('tasks', () => {
     total: 0,
   })
 
-  // Filter state
+  // Filter and sort state
   const filters = ref<TaskFilterParams>({
     status: '',
     assigned_to: '',
@@ -42,21 +39,6 @@ export const useTaskStore = defineStore('tasks', () => {
     sort_order: 'desc',
   })
 
-  // Feedback notification
-  const snackbar = ref<NotificationState>({
-    show: false,
-    text: '',
-    color: 'success',
-  })
-
-  function notify(text: string, color: NotificationState['color'] = 'success'): void {
-    snackbar.value = {
-      show: true,
-      text,
-      color,
-    }
-  }
-
   async function fetchTasks(): Promise<void> {
     loading.value = true
     try {
@@ -64,7 +46,10 @@ export const useTaskStore = defineStore('tasks', () => {
       tasks.value = response.data
       pagination.value = response.meta
     } catch (err: unknown) {
-      notify(extractApiErrorMessage(err, 'Failed to load tasks. Please try again.'), 'error')
+      notificationStore.notify(
+        extractApiErrorMessage(err, 'Failed to load tasks. Please try again.'),
+        'error'
+      )
     } finally {
       loading.value = false
     }
@@ -74,7 +59,10 @@ export const useTaskStore = defineStore('tasks', () => {
     try {
       users.value = await authApi.getUsers()
     } catch (err: unknown) {
-      notify(extractApiErrorMessage(err, 'Failed to load users list.'), 'error')
+      notificationStore.notify(
+        extractApiErrorMessage(err, 'Failed to load users list.'),
+        'error'
+      )
     }
   }
 
@@ -82,11 +70,11 @@ export const useTaskStore = defineStore('tasks', () => {
     loading.value = true
     try {
       await tasksApi.createTask(payload)
-      notify('Task created successfully.', 'success')
+      notificationStore.notify('Task created successfully.', 'success')
       await fetchTasks()
       return true
     } catch (err: unknown) {
-      notify(extractApiErrorMessage(err, 'Failed to create task.'), 'error')
+      notificationStore.notify(extractApiErrorMessage(err, 'Failed to create task.'), 'error')
       return false
     } finally {
       loading.value = false
@@ -97,11 +85,11 @@ export const useTaskStore = defineStore('tasks', () => {
     loading.value = true
     try {
       await tasksApi.updateTask(id, payload)
-      notify('Task updated successfully.', 'success')
+      notificationStore.notify('Task updated successfully.', 'success')
       await fetchTasks()
       return true
     } catch (err: unknown) {
-      notify(extractApiErrorMessage(err, 'Failed to update task.'), 'error')
+      notificationStore.notify(extractApiErrorMessage(err, 'Failed to update task.'), 'error')
       return false
     } finally {
       loading.value = false
@@ -112,11 +100,11 @@ export const useTaskStore = defineStore('tasks', () => {
     loading.value = true
     try {
       await tasksApi.deleteTask(id)
-      notify('Task deleted successfully.', 'success')
+      notificationStore.notify('Task deleted successfully.', 'success')
       await fetchTasks()
       return true
     } catch (err: unknown) {
-      notify(extractApiErrorMessage(err, 'Failed to delete task.'), 'error')
+      notificationStore.notify(extractApiErrorMessage(err, 'Failed to delete task.'), 'error')
       return false
     } finally {
       loading.value = false
@@ -129,8 +117,6 @@ export const useTaskStore = defineStore('tasks', () => {
     loading,
     pagination,
     filters,
-    snackbar,
-    notify,
     fetchTasks,
     fetchUsers,
     createTask,

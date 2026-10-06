@@ -8,14 +8,15 @@ use App\Http\Requests\LoginRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
     /**
-     * Authenticate user and issue Sanctum PlainTextToken.
+     * Authenticate user via stateful session or issue Sanctum PlainTextToken.
      *
-     * Source: https://laravel.com/docs/11.x/sanctum#issuing-api-tokens
+     * Source: https://laravel.com/docs/11.x/sanctum#spa-authentication
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -27,29 +28,47 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // Issue Sanctum Personal Access Token
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
+        // Store the Sanctum token in an HttpOnly cookie
+        $cookie = cookie(
+            name: 'auth_token',
+            value: $token,
+            minutes: 60 * 24 * 7,
+            path: '/',
+            domain: null,
+            secure: (bool) env('SESSION_SECURE_COOKIE', false),
+            httpOnly: true,
+            raw: false,
+            sameSite: 'lax'
+        );
+
+        $responseData = [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
             ],
-        ], 200);
+            'token' => $token,
+        ];
+
+        return response()->json($responseData, 200)->withCookie($cookie);
     }
 
     /**
-     * Revoke the current access token.
+     * Revoke access token and clear the auth cookie.
      *
      * Source: https://laravel.com/docs/11.x/sanctum#revoking-tokens
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        if ($request->user() && method_exists($request->user(), 'currentAccessToken') && $request->user()->currentAccessToken()) {
+            $request->user()->currentAccessToken()->delete();
+        }
 
-        return response()->json(null, 204);
+        return response()->json(null, 204)->withoutCookie('auth_token');
     }
 
     /**
